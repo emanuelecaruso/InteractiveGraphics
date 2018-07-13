@@ -57,6 +57,14 @@
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+		
+	window.addEventListener( 'resize', onWindowResize, false );
+	function onWindowResize()
+	{
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		webGLRenderer.setSize( window.innerWidth, window.innerHeight );
+	}
 	
 	function createMesh(geom) {
 
