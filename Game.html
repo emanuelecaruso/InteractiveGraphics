@@ -71,7 +71,7 @@
 				meshes[i].quaternion.copy(bodies[i].quaternion);
 			}
 		}    	
-
+		
     }
 	
 	var clock = new THREE.Clock(); // clock
@@ -80,10 +80,10 @@
 	// create a camera, which defines where we're looking at.
 	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
 	// create a render and set the size
-	var webGLRenderer = new THREE.WebGLRenderer();
+	var webGLRenderer = new THREE.WebGLRenderer({antialias: true});
 	var worldTime  = 0;
 	// once everything is loaded, we run our Three.js stuff.
-	var keyboard	= new THREEx.KeyboardState();
+	var keyboard = new THREEx.KeyboardState();
 	
 	webGLRenderer.setClearColor(new THREE.Color(0xffffff));
 	webGLRenderer.setSize(window.innerWidth, window.innerHeight);
@@ -97,6 +97,8 @@
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+
 		
 	window.addEventListener( 'resize', onWindowResize, false );
 	function onWindowResize()
@@ -105,17 +107,15 @@
 		camera.updateProjectionMatrix();
 		webGLRenderer.setSize( window.innerWidth, window.innerHeight );
 	}
+
 	
 	function createObject(meshgeom,shape,fixed,mass=0) {
 
-		// assign two materials
-		var meshMaterial = new THREE.MeshNormalMaterial();
-		meshMaterial.side = THREE.DoubleSide;
-		var wireFrameMat = new THREE.MeshBasicMaterial();
-		wireFrameMat.wireframe = true;
+		var meshMaterial = new THREE.MeshPhongMaterial();
+		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
+		mesh.castShadow = true;
+		mesh.receiveShadow = true;
 
-		// create a multimaterial
-		var mesh = THREE.SceneUtils.createMultiMaterialObject(meshgeom, [meshMaterial, wireFrameMat]);
 		var body = new CANNON.Body({
 			mass: mass
 		});
@@ -127,6 +127,30 @@
 		
 		return meshes[meshes.length-1];
 	}
+
+	function SpotLight()
+	{
+		//light settings
+		var light = new THREE.SpotLight(0xffffff, 0.7, 0, Math.PI/5, 0.5);
+		light.position.set( 0, 14, 0 );
+		light.castShadow = true;
+		light.target.position.set (0, 0, 0);
+		scene.add( light );
+
+		//visualize schematic light wires
+		var helper = new THREE.SpotLightHelper( light );
+		scene.add( helper );
+		scene.add( light.target );
+
+		return light;
+		
+	}
+
+	
+
+	var Ambient_Light = new THREE.AmbientLight(0xffffff, 0.05);
+	scene.add(Ambient_Light);
+	
 
 	initCannon();
 	
@@ -978,7 +1002,9 @@
 		}
 		
 		standardRoom.position.x=60*(num);
+		roomLight(num);
 		return standardRoom;
+
 	}
 	
 	//CREATE A CIRCULAR ROOM
@@ -1046,6 +1072,33 @@
 		
 	}
 	
+
+//-----------------TUBE-LIGHT-----------------------//
+
+	function roomLight(num)
+	{
+		var tubeGeometry = new THREE.CylinderBufferGeometry( 0.3, 0.3, 30 );
+		tubeLight = new THREE.PointLight( 0x0000ff, 0.7, 100, 2 );
+		tubeMat = new THREE.MeshStandardMaterial( {
+		emissive: 0x0000ff,
+		emissiveIntensity: 1,
+		color: 0x000000
+	});
+
+	tubeLight.add( new THREE.Mesh( tubeGeometry, tubeMat ) );
+	tubeLight.position.set( 60*(num), 15, 0 );
+	tubeLight.castShadow = true;
+
+	tubeLight.rotateZ (Math.PI/2);
+	scene.add( tubeLight );
+
+	}
+
+	
+
+//-------------------------------------------------------------//
+
+
 	//--------------------------------------------------------------//
 	//-----------------------CREATE-OBJECTS-------------------------//
 	//--------------------------------------------------------------//
@@ -1158,7 +1211,7 @@
 	}
 	
 	mapAnimation();
-	
+
 	//***************************************************************************//
 	//*****************************-MAP SCRIPT-**********************************//
 	//**********************************END**************************************//
