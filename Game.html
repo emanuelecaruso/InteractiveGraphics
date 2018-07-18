@@ -550,8 +550,8 @@
 					upLegsObject[3*c+4].rotateZ(-0.075+(0.01*(counter1-8)));
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
-					knees[3*c].rotateZ(0.17);
-					knees[3*c+4].rotateZ(0.17);
+					knees[3*c].rotateZ(0.15);
+					knees[3*c+4].rotateZ(0.15);
 					
 					if(step2)
 					{
@@ -580,8 +580,8 @@
 					upLegsObject[3*c+4].rotateZ(-0.075-(0.01*(counter1-12)));
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
-					knees[3*c].rotateZ(0.17);
-					knees[3*c+4].rotateZ(0.17);
+					knees[3*c].rotateZ(0.19);
+					knees[3*c+4].rotateZ(0.19);
 					
 					if(step2)
 					{
@@ -1050,10 +1050,16 @@
 	//-----------------------CREATE-OBJECTS-------------------------//
 	//--------------------------------------------------------------//
 	
+	//create the edge
+	var bound = createObject(new THREE.BoxGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(3000,30,0.005)), true );
+	bound.position.z=20;
+	//bound.rotateZ(-Math.PI/2);
+	scene.add(bound);
+	
 	//create the rooms
 	var rooms = [];
 	rooms[0] = createStandardRoom(true,false,0);
-	rooms[1] = createStandardRoom(false,true,1);
+	rooms[1] = createStandardRoom(false,false,1);
 	rooms[2] = createStandardRoom(true,false,2);
 	rooms[3] = createCircleRoom(false,3);
 	
@@ -1140,7 +1146,7 @@
 		if(keyboard.pressed("F"))
 		{
 			
-			var testMesh = createObject(new THREE.BoxGeometry( 0.8, 0.8, 0.8 ), new CANNON.Box ( new CANNON.Vec3(0.4,0.4,0.4)), false, 10 );
+			var testMesh = createObject(new THREE.BoxGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
 			bodies[bodies.length-1].position.set(45,7,0);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
