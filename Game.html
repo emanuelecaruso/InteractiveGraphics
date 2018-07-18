@@ -4,8 +4,9 @@
 
 <head>
     <title>Game</title>
-    <script type="text/javascript" src="./libs/three.js"></script>
-    <script type="text/javascript" src="./libs/ammo.js"></script>
+    <script type="text/javascript" src="./build/three.js"></script>
+    <script type="text/javascript" src="./build/SceneUtils.js"></script>
+    <script type="text/javascript" src="./libs/cannon.js"></script>
     <script type="text/javascript" src="./libs/stats.js"></script>
 	<script type="text/javascript" src="./libs/KeyboardState.js"></script>
     <script type="text/javascript" src="./libs/dat.gui.js"></script>
@@ -29,26 +30,65 @@
 <!-- Javascript code that runs our Three.js examples -->
 <script type="text/javascript">
 	
-	// clock
-	var clock = new THREE.Clock();
 	
+	var world, timeStep=1/60;
+	var vec3 = new THREE.Vector3();
+	var quaternion = new THREE.Quaternion();
+	
+	var meshes = [];
+	var bodies = [];
+	var mapBody;
+	
+	var fixedBodies = [];
+	
+	function initCannon() {
+
+		world = new CANNON.World();
+		world.gravity.set(0,0,0);
+		world.broadphase = new CANNON.NaiveBroadphase();
+		world.solver.iterations = 10;
+
+    }
+	
+	
+	function updatePhysics() {
+
+        // Step the physics world
+ 		world.step(timeStep);
+
+		for(i=0; i<bodies.length; i++)
+		{
+			if(fixedBodies[i])
+			{
+				vec3=meshes[i].getWorldPosition(vec3);
+				bodies[i].position.copy(vec3);
+				quaternion=meshes[i].getWorldQuaternion(quaternion);
+				bodies[i].quaternion.copy(quaternion);
+			}
+			else
+			{
+				meshes[i].position.copy(bodies[i].position);
+				meshes[i].quaternion.copy(bodies[i].quaternion);
+			}
+		}    	
+
+    }
+	
+	var clock = new THREE.Clock(); // clock
 	// create a scene, that will hold all our elements such as objects, cameras and lights.
 	var scene = new THREE.Scene();
-
 	// create a camera, which defines where we're looking at.
 	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-
 	// create a render and set the size
 	var webGLRenderer = new THREE.WebGLRenderer();
+	var worldTime  = 0;
+	// once everything is loaded, we run our Three.js stuff.
+	var keyboard	= new THREEx.KeyboardState();
 	
-	var worldTime = 0;
-	
-	webGLRenderer.setClearColor(new THREE.Color(0xEEEEEE, 1.0));
+	webGLRenderer.setClearColor(new THREE.Color(0xffffff));
 	webGLRenderer.setSize(window.innerWidth, window.innerHeight);
-	webGLRenderer.shadowMapEnabled = true;
-
+	webGLRenderer.shadowMap.enabled = true;
 	
-
 	// position and point the camera to the center of the scene
 	camera.position.x = 0;
 	camera.position.y = 12;
@@ -66,7 +106,7 @@
 		webGLRenderer.setSize( window.innerWidth, window.innerHeight );
 	}
 	
-	function createMesh(geom) {
+	function createObject(meshgeom,shape,fixed,mass=0) {
 
 		// assign two materials
 		var meshMaterial = new THREE.MeshNormalMaterial();
@@ -75,10 +115,21 @@
 		wireFrameMat.wireframe = true;
 
 		// create a multimaterial
-		var mesh = THREE.SceneUtils.createMultiMaterialObject(geom, [meshMaterial, wireFrameMat]);
-
-		return mesh;
+		var mesh = THREE.SceneUtils.createMultiMaterialObject(meshgeom, [meshMaterial, wireFrameMat]);
+		var body = new CANNON.Body({
+			mass: mass
+		});
+		body.addShape(shape);
+		
+		meshes.push(mesh);
+		bodies.push(body);
+		fixedBodies.push(fixed);
+		
+		return meshes[meshes.length-1];
 	}
+
+	initCannon();
+	
 </script>
 	
 	
@@ -88,17 +139,14 @@
 	
 	
 <script type="text/javascript">
-//SCRIPT PER IL ROBOT
 
+	//****************************************************************************//
+	//*****************************-ROBOT-SCRIPT**********************************//
+	//*********************************START**************************************//
+	//****************************************************************************//
 
-	// call the render function
-	var step = 0;
-	var time = 0;
-	var time1 = 0;
-
-	// once everything is loaded, we run our Three.js stuff.
-	var keyboard	= new THREEx.KeyboardState();
-
+	var headTime = 0;
+	var spyderTime = 0;
 	var velocity=0;
 	var velocityDir=0;
 	var maxvelocity= 6.0;
@@ -110,14 +158,14 @@
 	
 	var rotator = new THREE.Object3D();
 	
-	var sphere = createMesh(new THREE.SphereGeometry(robotScale, 8, 8));
+	var sphereObject = createObject(new THREE.SphereGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale), true);
 	
-	var head = createMesh(new THREE.BoxGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale));
-	head.position.set(0,1.3*robotScale,0);
+	var headObject = createObject(new THREE.BoxGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)), true);
+	headObject.position.set(0,1.3*robotScale,0);
 	
 	
-	var upLegs = [];
-	var downLegs = [];
+	var upLegsObject = [];
+	var downLegsObject = [];
 	var upLegsLength =1.3;
 	var downLegsLength =1;
 	var knees = [];
@@ -139,9 +187,9 @@
 	
 	for(var i =0; i<8; i++)
 	{
-		upLegs[i]= createMesh(new THREE.CylinderGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3));
+		upLegsObject[i]= createObject(new THREE.CylinderGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3),  new CANNON.Cylinder(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3), true);
 		knees[i]= new THREE.Object3D();
-		downLegs[i]= createMesh(new THREE.CylinderGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3));
+		downLegsObject[i]= createObject(new THREE.CylinderGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3),  new CANNON.Cylinder(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3), true);
 		feet[i]= new THREE.Object3D();
 	}
 		
@@ -149,26 +197,26 @@
 	{
 		for(var i=0; i<8; i++)
 		{
-			upLegs[i].position.set(0,-0.45*robotScale,0);
-			upLegs[i].rotation.set(0,0,Math.PI/2);
+			upLegsObject[i].position.set(0,-0.45*robotScale,0);
+			upLegsObject[i].rotation.set(0,0,Math.PI/2);
 			
 			if(i<4)
-				upLegs[i].rotateX((Math.PI/5)*(i+1));
+				upLegsObject[i].rotateX((Math.PI/5)*(i+1));
 			
 			else
-				upLegs[i].rotateX((-Math.PI/5)*(i-3));
+				upLegsObject[i].rotateX((-Math.PI/5)*(i-3));
 			
-			upLegs[i].rotateZ(rotationAngles[upLegsId] = -Math.PI/8);
+			upLegsObject[i].rotateZ(rotationAngles[upLegsId] = -Math.PI/8);
 			
 			knees[i].position.set(0,(upLegsLength/2)*robotScale,0);
 			knees[i].rotation.set(0,0,rotationAngles[kneesId] = Math.PI);
 
-			downLegs[i].position.set(0,(downLegsLength/2)*robotScale,0);
+			downLegsObject[i].position.set(0,(downLegsLength/2)*robotScale,0);
 
 			feet[i].position.set(0,(downLegsLength/2)*robotScale,0);
 			feet[i].rotation.set(0,0,0);
 			
-			upLegsInitialRotation[i] = upLegs[i].rotation.clone();
+			upLegsInitialRotation[i] = upLegsObject[i].rotation.clone();
 		}
 	}
 	
@@ -188,27 +236,25 @@
 	var transitions=0;
 	var spyderMode=false;
 	var legId;
-	var robotHeight= robotScale+(0.2*robotScale);
+	var robotHeight= robotScale+(0.2*robotScale); //height of the robot during spydermode
 
 	
 	//var robot = new THREE.Group();
 	//robot.add( neck );
-	robot.add( sphere );
-	robot.add( head );
+	robot.add( sphereObject );
+	robot.add( headObject );
 	robot.add( rotator );
 	
 	var legs = new THREE.Group();
 	for(var i =0; i<8; i++)
 	{
-		legs.add(upLegs[i]);
-		legs.add(downLegs[i]);
+		legs.add(upLegsObject[i]);
+		legs.add(downLegsObject[i]);
 	}
 	
 	//add the robot to the scene
+	rotator.add(headObject);
 	scene.add(robot);
-	
-	robot.add(sphere, rotator);
-	rotator.add(head);
 
 	//render();
 	function velocityCalculation()
@@ -266,7 +312,7 @@
 		if (headIsRotating && Math.abs(counter)<2*Math.PI)
 			{
 				counter += sign * 0.4;
-				head.rotation.y = counter;
+				headObject.rotation.y = counter;
 			}
 		else
 			{
@@ -274,18 +320,18 @@
 			}
 		
 		
-		rotator.rotation.z= dampingZ = sign1*0.5*Math.sin(2*time);
-		rotator.rotation.x= dampingX = sign2*0.5*Math.sin(3*time);
+		rotator.rotation.z= dampingZ = sign1*0.5*Math.sin(2*headTime);
+		rotator.rotation.x= dampingX = sign2*0.5*Math.sin(3*headTime);
 		
 		if(spyderMode && !robotIsMoving)
 		{
-			robot.translateY(-0.01*(robotScale/3)*(Math.sin(3*time1)));
+			robot.translateY(-0.01*(robotScale/3)*(Math.sin(3*spyderTime)));
 			for(var i=0; i<8; i++)
 			{
-				upLegs[i].rotateZ(-0.005*(Math.sin(3*time1)));
-				knees[i].rotateZ(0.005*(Math.sin(3*time1)));
+				upLegsObject[i].rotateZ(-0.005*(Math.sin(3*spyderTime)));
+				knees[i].rotateZ(0.005*(Math.sin(3*spyderTime)));
 			}
-			time1+=0.015;
+			spyderTime+=0.015;
 		}
 		
 
@@ -293,15 +339,12 @@
 	
 	function robotRoll() 
 	{	
-		sphere.rotation.z = rotationAngles[sphereId] -= 0.05*velocity;
+		sphereObject.rotation.z = rotationAngles[sphereId] -= 0.05*velocity;
 		robot.translateX(0.05*velocity*robotScale); 
-
-		/*var axisY = new THREE.Vector3(robot.position.x,robot.position.y+(0.15*(Math.abs(velocity))),0);
-		rotator.translateOnAxis(rotator.worldToLocal(axisY),0.3); */
 		
 		rotator.position.y = 0.1*(Math.abs(velocity))*robotScale;
 		
-		head.rotation.z = 0.3*velocity;
+		headObject.rotation.z = 0.3*velocity;
 		
 		
 		if (Math.abs(velocity)==0)	
@@ -312,7 +355,7 @@
 			rotator.rotation.z = -0.2*velocity+dampingZ;
 			rotator.rotation.x = dampingX = dampingX/1.2;
 			dampingZ=dampingZ/1.12;
-			time=0;
+			headTime=0;
 			if(Math.random() >= 0.5)
 			{
 				sign1= -sign1;
@@ -329,7 +372,7 @@
 				if (headIsRotating && counter<2*Math.PI)
 			{
 				counter += 0.4;
-				head.rotation.y = counter;
+				headObject.rotation.y = counter;
 			}
 			else
 			{
@@ -350,22 +393,22 @@
 	
 	function ballToLegsTransformation()
 	{
-		time1=0;
+		spyderTime=0;
 		scene.add(legs);
 		robot.add(legs);
 		robotSelfAnimation();
 
 		for(var i =0; i<8; i++)
 		{
-			upLegs[i].add(knees[i]);
-			knees[i].add(downLegs[i]);
-			downLegs[i].add(feet[i]);
+			upLegsObject[i].add(knees[i]);
+			knees[i].add(downLegsObject[i]);
+			downLegsObject[i].add(feet[i]);
 		}
 		
-		if (upLegs[0].position.y < -0.1*robotScale)
+		if (upLegsObject[0].position.y < -0.1*robotScale)
 		{
 			for(var i =0; i<8; i++)
-				upLegs[i].translateY(0.1);
+				upLegsObject[i].translateY(0.1);
 		}
 		
 		else if(rotationAngles[kneesId] > 0.5*Math.PI)
@@ -376,24 +419,24 @@
 			rotationAngles[kneesId] -= 0.06;
 		}
 		
-		else if(feet[0].getWorldPosition().y>0 && !step)
+		else if(feet[0].getWorldPosition(vec3).y>0 && !step)
 		{
 				for(var i =0; i<8; i++)
 				{
-					upLegs[i].rotateZ(0.01);
+					upLegsObject[i].rotateZ(0.01);
 				}
 		}
 		
 		else if(robot.position.y<robotHeight)
 		{
 			step=true;
-			if(feet[0].getWorldPosition().y<=0 || feet[1].getWorldPosition().y<=0)
+			if(feet[0].getWorldPosition(vec3).y<=0 || feet[1].getWorldPosition(vec3).y<=0)
 				robot.translateY(0.02*(robotScale/3));
 			else
 			{
 				for(var i=0; i<8; i++)
 				{
-					upLegs[i].rotateZ(0.01);
+					upLegsObject[i].rotateZ(0.01);
 					knees[i].rotateZ(-0.01);
 				}
 			}
@@ -403,11 +446,8 @@
 		{
 			step=false;
 			transformation=2;
-			//time=0;
 			spyderMode=true;
 		}
-		
-
 		
 	}
 	
@@ -431,46 +471,62 @@
 				robotIsMoving=true;
 				if (counter1<4)
 				{
-					upLegs[0+c].rotateZ(-0.15);
-					upLegs[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[2+c].rotateZ(-0.15);
-					upLegs[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[4+c].rotateZ(-0.15);
-					upLegs[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[6+c].rotateZ(-0.15);
-					upLegs[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[0+c].rotateZ(-0.15);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[2+c].rotateZ(-0.15);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[4+c].rotateZ(-0.15);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[6+c].rotateZ(-0.15);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					
+					upLegsObject[3*c].rotateZ(0.075);
+					upLegsObject[3*c+4].rotateZ(0.075);
+					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
+					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
+					knees[3*c].rotateZ(-0.15);
+					knees[3*c+4].rotateZ(-0.15);
 					
 					counter1++;
 					
 					if(step1)
 					{
-						upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 						
 						robot.translateX(sign3*0.1*robotScale);
 					}
 				}
 				else if(counter1<8)
 				{
-					upLegs[0+c].rotateZ(0.15);
-					upLegs[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[2+c].rotateZ(0.15);
-					upLegs[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[4+c].rotateZ(0.15);
-					upLegs[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[6+c].rotateZ(0.15);
-					upLegs[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[0+c].rotateZ(0.15);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[2+c].rotateZ(0.15);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[4+c].rotateZ(0.15);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[6+c].rotateZ(0.15);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
 
 					counter1++;
 					
+					upLegsObject[3*c].rotateZ(0.075);
+					upLegsObject[3*c+4].rotateZ(0.075);
+					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
+					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
+					knees[3*c].rotateZ(-0.15);
+					knees[3*c+4].rotateZ(-0.15);
+					
+					console.log(feet[3*c].getWorldPosition(vec3).y);
+					
 					if(step1)
 					{
-						upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 						
 						robot.translateX(sign3*0.1*robotScale);
 					}
@@ -482,23 +538,29 @@
 				}
 				else if(counter1<12)
 				{
-					upLegs[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 					
-					upLegs[1-c].rotateZ(-0.15);
-					upLegs[3-c].rotateZ(-0.15);
-					upLegs[5-c].rotateZ(-0.15);
-					upLegs[7-c].rotateZ(-0.15);
-
+					upLegsObject[1-c].rotateZ(-0.15);
+					upLegsObject[3-c].rotateZ(-0.15);
+					upLegsObject[5-c].rotateZ(-0.15);
+					upLegsObject[7-c].rotateZ(-0.15);
+					
+					upLegsObject[3*c].rotateZ(-0.075);
+					upLegsObject[3*c+4].rotateZ(-0.075);
+					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
+					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
+					knees[3*c].rotateZ(0.15);
+					knees[3*c+4].rotateZ(0.15);
 					
 					if(step2)
 					{
-						upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
 					}
 
 					robot.translateX(sign3*0.1*robotScale);
@@ -506,23 +568,29 @@
 				}
 				else if(counter1<16)
 				{
-					upLegs[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 					
-					upLegs[1-c].rotateZ(0.15);
-					upLegs[3-c].rotateZ(0.15);
-					upLegs[5-c].rotateZ(0.15);
-					upLegs[7-c].rotateZ(0.15);
-
+					upLegsObject[1-c].rotateZ(0.15);
+					upLegsObject[3-c].rotateZ(0.15);
+					upLegsObject[5-c].rotateZ(0.15);
+					upLegsObject[7-c].rotateZ(0.15);
+					
+					upLegsObject[3*c].rotateZ(-0.075);
+					upLegsObject[3*c+4].rotateZ(-0.075);
+					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
+					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
+					knees[3*c].rotateZ(0.15);
+					knees[3*c+4].rotateZ(0.15);
 					
 					if(step2)
 					{
-						upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
 					}
 					
 					
@@ -546,15 +614,15 @@
 				else if(counter1<20 && !step1)
 				{
 					
-					upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 					
-					upLegs[c].rotateZ(-0.15);
-					upLegs[2+c].rotateZ(-0.15);
-					upLegs[4+c].rotateZ(-0.15);
-					upLegs[6+c].rotateZ(-0.15);
+					upLegsObject[c].rotateZ(-0.15);
+					upLegsObject[2+c].rotateZ(-0.15);
+					upLegsObject[4+c].rotateZ(-0.15);
+					upLegsObject[6+c].rotateZ(-0.15);
 					
 					robot.translateX(sign3*0.1*robotScale);
 					counter1++;
@@ -562,15 +630,15 @@
 				}
 				else if(counter1<24 && !step1)
 				{
-					upLegs[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegs[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegs[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
 					
-					upLegs[0+c].rotateZ(0.15);
-					upLegs[2+c].rotateZ(0.15);
-					upLegs[4+c].rotateZ(0.15);
-					upLegs[6+c].rotateZ(0.15);
+					upLegsObject[0+c].rotateZ(0.15);
+					upLegsObject[2+c].rotateZ(0.15);
+					upLegsObject[4+c].rotateZ(0.15);
+					upLegsObject[6+c].rotateZ(0.15);
 					
 					robot.translateX(sign3*0.1*robotScale);
 					counter1++;
@@ -597,9 +665,8 @@
 		{
 			case 0:
 				if (velocityDir!=0)
-				{
 					transitions=1;
-				}
+				
 				robotSelfAnimation();
 				
 				if(keyboard.pressed("space"))
@@ -623,19 +690,19 @@
 		robotSelfAnimation();
 		if(robot.position.y>robotScale)
 		{
-			if(feet[0].getWorldPosition().y>0)
+			if(feet[0].getWorldPosition(vec3).y>0)
 				robot.translateY(-0.02*(robotScale/3));
 			else
 				for(var i=0; i<8; i++)
 				{
-					upLegs[i].rotateZ(-0.01);
+					upLegsObject[i].rotateZ(-0.01);
 					knees[i].rotateZ(0.01);
 				}
 		}
-		else if (upLegs[0].rotation.z > upLegsInitialRotation[0].z)
+		else if (upLegsObject[0].rotation.z > upLegsInitialRotation[0].z)
 		{
 			for(var i =0; i<8; i++)
-				upLegs[i].rotateZ(-0.01);
+				upLegsObject[i].rotateZ(-0.01);
 		}
 		else if(rotationAngles[kneesId] < Math.PI)
 		{
@@ -644,10 +711,10 @@
 			rotationAngles[kneesId] += 0.06;
 
 		}
-		else if(upLegs[0].position.y > -0.33*robotScale)
+		else if(upLegsObject[0].position.y > -0.33*robotScale)
 		{
 			for(var i =0; i<8; i++)
-				upLegs[i].translateY(-0.1);
+				upLegsObject[i].translateY(-0.1);
 		}
 		else
 		{
@@ -660,9 +727,10 @@
 		
 	}
 	
+	//Animation of the robot
 	function robotAnimation() {
 
-		time += 0.015;
+		headTime += 0.015;
 		
 		camera.position.x = robot.position.x+velocity/2;
 
@@ -721,59 +789,64 @@
 	}
 	
 	robotAnimation();
+	
+	//****************************************************************************//
+	//*****************************-ROBOT-SCRIPT**********************************//
+	//**********************************END***************************************//
+	//****************************************************************************//
+	
 </script>
 	
 	
-	
-	
-	
-	
-	
 <script type="text/javascript">
-//SCRIPT PER LA MAPPA
-
+	
+	//***************************************************************************//
+	//*****************************-MAP SCRIPT-**********************************//
+	//*********************************START*************************************//
+	//***************************************************************************//
+	
 	var doorsArray = [];
 	var roomHasFrontDoor = [];
 	var roomHasBackDoor = [];
 	var boxLength =1.7;
 	var boxDepth = 1.1;
 	
-	//-------------------------------------------------------//
-	//-----------------------OBJECTS-------------------------//
-	//-------------------------------------------------------//
+	//-------------------------------------------------------------//
+	//----------------------CREATE-OBJECTS-------------------------//
+	//-------------------------------------------------------------//
 
 		
 	//CREATE A WALL
 	function createWall(wallWidth, roomHeight)
 	{
-		var wall=createMesh(new THREE.PlaneBufferGeometry(wallWidth,roomHeight,1,1))
-		return wall;
+		var wallObject=createObject(new THREE.BoxGeometry(wallWidth,roomHeight,0.1), new CANNON.Box(new CANNON.Vec3(wallWidth/2,roomHeight/2,0.1/2)), true )
+		return wallObject;
 	}
 	
 	//CREATE A WINDOW
 	function createWindow(starshipWindowWidth, starshipWindowHeight)
 	{
-		var starshipWindow = new THREE.Group();
+		var starshipWindowGroup = new THREE.Group();
 		
-		var bottomS = createMesh(new THREE.BoxGeometry(starshipWindowWidth,2,2));
-		bottomS.position.set(0,-starshipWindowHeight/2+1,0);
-		var topS = createMesh(new THREE.BoxGeometry(starshipWindowWidth,2,2));
-		topS.position.set(0,starshipWindowHeight/2-1,0);
-		var leftS = createMesh(new THREE.BoxGeometry(2,starshipWindowHeight,2));
-		leftS.position.set(-starshipWindowWidth/2,0,0);
-		var rightS = createMesh(new THREE.BoxGeometry(2,starshipWindowHeight,2));
-		rightS.position.set(starshipWindowWidth/2,0,0)
+		var bottomSObject = createObject(new THREE.BoxGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
+		bottomSObject.position.set(0,-starshipWindowHeight/2+1,0);
+		var topSObject = createObject(new THREE.BoxGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
+		topSObject.position.set(0,starshipWindowHeight/2-1,0);
+		var leftSObject = createObject(new THREE.BoxGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
+		leftSObject.position.set(-starshipWindowWidth/2,0,0);
+		var rightSObject = createObject(new THREE.BoxGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
+		rightSObject.position.set(starshipWindowWidth/2,0,0)
 		
-		starshipWindow.add(bottomS, topS, leftS, rightS);
+		starshipWindowGroup.add(bottomSObject, topSObject, leftSObject, rightSObject);
 
-		return starshipWindow;
+		return starshipWindowGroup;
 	}
 	
 	//CREATE A DOOR
 	function createDoor(doorHeight, doorWidth)
 	{
-		var door = createMesh(new THREE.BoxGeometry(1.2,doorHeight,doorWidth));
-		return door;
+		var doorObject = createObject(new THREE.BoxGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)), true );
+		return doorObject;
 	}
 	
 	
@@ -783,48 +856,48 @@
 		var doorWidth=8;
 		var doorHeight=10;
 		
-		var wall1 = createMesh(new THREE.BoxGeometry(2,height,(depth-doorWidth)/2));
-		wall1.position.set(0,height/2,-(doorWidth/2)-((depth-doorWidth)/4));
-		var wall2 = createMesh(new THREE.BoxGeometry(2,height,(depth/2)-(doorWidth/2)));
-		wall2.position.set(0,height/2,+(doorWidth/2)+((depth-doorWidth)/4));
-		var wall3 = createMesh(new THREE.BoxGeometry(2,height-doorHeight,doorWidth));
-		wall3.position.set(0,height-((height-doorHeight)/2),0);
+		var wall1Object = createObject(new THREE.BoxGeometry(2,height,(depth-doorWidth)/2), new CANNON.Box(new CANNON.Vec3(1,height/2,(depth-doorWidth)/4)), true);
+		wall1Object.position.set(0,height/2,-(doorWidth/2)-((depth-doorWidth)/4));
+		var wall2Object = createObject(new THREE.BoxGeometry(2,height,(depth/2)-(doorWidth/2)), new CANNON.Box(new CANNON.Vec3(1,height/2,((depth/2)-(doorWidth/2))/2)), true);
+		wall2Object.position.set(0,height/2,+(doorWidth/2)+((depth-doorWidth)/4));
+		var wall3Object = createObject(new THREE.BoxGeometry(2,height-doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1,(height-doorHeight)/2,doorWidth/2)), true);
+		wall3Object.position.set(0,height-((height-doorHeight)/2),0);
 		
 		
 		
-		var wallForDoor = new THREE.Group();
-		wallForDoor.add(wall1,wall2,wall3);
+		var wallForDoorGroup = new THREE.Group();
+		wallForDoorGroup.add(wall1Object,wall2Object,wall3Object);
 		
-		return wallForDoor;
+		return wallForDoorGroup;
 	}
 
-	//CREATE A SURVEILLANCE CAMERA
+	//CREATE A SECURITY CAMERA
 	function createSurveillanceCamera()
 	{
-		var surveillanceCamera = new THREE.Group();
+		var surveillanceCameraGroup = new THREE.Group();
 		
-		var box = createMesh(new THREE.BoxGeometry(boxLength,boxDepth,boxDepth));
+		var boxObject = createObject(new THREE.BoxGeometry(boxLength,boxDepth,boxDepth), new CANNON.Box(new CANNON.Vec3(boxLength/2,boxDepth/2,boxDepth/2)), true);
 		
-		var eye = createMesh(new THREE.CylinderGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8));
-		eye.rotation.z=Math.PI/2;
-		eye.position.x=-boxLength/2;
+		var eyeObject = createObject(new THREE.CylinderGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8),  new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,boxLength/3,8), true );
+		eyeObject.rotation.z=Math.PI/2;
+		eyeObject.position.x=-boxLength/2;
 		
-		surveillanceCamera.add(box,eye);
-		surveillanceCamera.rotation.z=Math.PI/6;
+		surveillanceCameraGroup.add(boxObject,eyeObject);
+		surveillanceCameraGroup.rotation.z=Math.PI/6;
 		
-		return surveillanceCamera;
+		return surveillanceCameraGroup;
 	}
 	function createSubstainForSurvaillanceCamera()
 	{
 		var substainForSurveillanceCamera = new THREE.Group();
 		
-		var stick1 = createMesh(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3));
+		var stick1Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3), true  );
 		
-		var stick2 = createMesh(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3));
-		stick2.position.set(boxLength/2,+boxLength/10,0);
-		stick2.rotation.z=-Math.PI/4;
+		var stick2Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3), true );
+		stick2Object.position.set(boxLength/2,+boxLength/10,0);
+		stick2Object.rotation.z=-Math.PI/4;
 		
-		substainForSurveillanceCamera.add(stick1,stick2);
+		substainForSurveillanceCamera.add(stick1Object,stick2Object);
 		substainForSurveillanceCamera.position.y=-boxLength/2;
 
 		
@@ -837,63 +910,63 @@
 	//-----------------------------------------------------//
 
 	
-	//CREATE A STARSHIP'S ROOM WITH WINDOW (COLUMN OR DOOR)
+	//CREATE A STARSHIP'S ROOM (WINDOW OR WALL) (COLUMN OR DOOR)
 	function createStandardRoom (window,column, num)
 	{
 		var standardRoom = new THREE.Group();
 		
 		//room size
 		var roomWidth = 60;
-		var roomDepth = 20;
+		var roomDepth = 39;
 		var roomHeight = 15;
 		
-		var floor = createMesh(new THREE.PlaneBufferGeometry(roomWidth,roomDepth,1,1));
-		floor.rotation.set(-Math.PI/2,0,0);
-		standardRoom.add(floor);
+		var floorObject = createObject(new THREE.BoxGeometry(roomWidth,roomDepth,0.1),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
+		floorObject.rotation.set(-Math.PI/2,0,0);
+		standardRoom.add(floorObject);
 
+		//a starship window and walls
 		if(window)
 		{
-			//a starship window and walls
 			var pieceOfWallWidth = roomWidth/8;
 			var starshipWindowWidth = roomWidth-(2*pieceOfWallWidth);
 			var starshipWindowHeight = roomHeight;
 
-			var starshipWindow = createWindow(starshipWindowWidth, starshipWindowHeight);
-			starshipWindow.position.set(0,starshipWindowHeight/2,-roomDepth/2);
-			standardRoom.add(starshipWindow);
+			var starshipWindowGroup = createWindow(starshipWindowWidth, starshipWindowHeight);
+			starshipWindowGroup.position.set(0,starshipWindowHeight/2,-roomDepth/2);
+			standardRoom.add(starshipWindowGroup);
 
-			var wallR = createWall(pieceOfWallWidth,roomHeight);
-			wallR.position.set((starshipWindowWidth/2)+(pieceOfWallWidth/2),roomHeight/2,-roomDepth/2);
-			var wallL = createWall(pieceOfWallWidth,roomHeight);
-			wallL.position.set(-(starshipWindowWidth/2)-(pieceOfWallWidth/2),roomHeight/2,-roomDepth/2);
-			standardRoom.add(wallR, wallL);
+			var wallRObject = createWall(pieceOfWallWidth,roomHeight);
+			wallRObject.position.set((starshipWindowWidth/2)+(pieceOfWallWidth/2),roomHeight/2,-roomDepth/2);
+			var wallLObject = createWall(pieceOfWallWidth,roomHeight);
+			wallLObject.position.set(-(starshipWindowWidth/2)-(pieceOfWallWidth/2),roomHeight/2,-roomDepth/2);
+			standardRoom.add(wallRObject, wallLObject);
 		}
 		else
 		{
-			var wall = createWall(roomWidth,roomHeight);
-			wall.position.set(0,roomHeight/2,-roomDepth/2);
-			standardRoom.add(wall);
+			var wallObject = createWall(roomWidth,roomHeight);
+			wallObject.position.set(0,roomHeight/2,-roomDepth/2);
+			standardRoom.add(wallObject);
 		}
 
 		//ceiling
-		var ceiling = createMesh(new THREE.PlaneBufferGeometry(roomWidth,roomDepth,1,1));;
-		ceiling.rotation.set(Math.PI/2,0,0);
-		//floor.rotation.set(Math.PI,0,0);
-		ceiling.position.y=roomHeight;
-		standardRoom.add(ceiling);
+		var ceilingObject = createObject(new THREE.BoxGeometry(roomWidth,roomDepth,0.1), new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
+		ceilingObject.rotation.set(Math.PI/2,0,0);
+		ceilingObject.position.y=roomHeight;
+		standardRoom.add(ceilingObject);
 
 		//column
 		if(column)
 		{
-			var column = createMesh(new THREE.BoxGeometry(5,roomHeight,4));
-			column.position.set(roomWidth/2,roomHeight/2,-roomDepth/2+2);
-			standardRoom.add(column);
+			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4), new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
+			columnObject.position.set(roomWidth/2,roomHeight/2,-roomDepth/2+2);
+			standardRoom.add(columnObject);
 		}
+		//wall for door
 		else
 		{
-			var wallForDoor = createWallForDoor(roomDepth,roomHeight);
-			wallForDoor.position.x=roomWidth/2;
-			standardRoom.add(wallForDoor);
+			var wallForDoorGroup = createWallForDoor(roomDepth,roomHeight);
+			wallForDoorGroup.position.x=roomWidth/2;
+			standardRoom.add(wallForDoorGroup);
 			
 			var door = createDoor(10, 8);
 			door.position.set(30+60*num,5,0);
@@ -920,12 +993,13 @@
 		var roomHeight = 15;
 		
 		//floor circle
-		var floor = createMesh(new THREE.CircleGeometry(radius,numOfSegments));
-		floor.rotation.set(-Math.PI/2,0,0);
-		circleRoom.add(floor);
+		var floorObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
+		floorObject.rotation.set(-Math.PI/2,0,0);
+		floorObject.position.y=0.05;
+		circleRoom.add(floorObject);
 		
 		//circular wall
-		var wall = new THREE.Group();
+		var wallGroup = new THREE.Group();
 		var wallPieces = [];
 		for(i=3; i<numOfSegments-3; i++)
 		{
@@ -933,34 +1007,30 @@
 			wallPieces[i].rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces[i].translateZ(-radius);
 			wallPieces[i].position.y=roomHeight/2;
-			wall.add(wallPieces[i]);
+			wallGroup.add(wallPieces[i]);
 		}
+		circleRoom.add(wallGroup);
 		
 		//ceiling
-		var ceiling = createMesh(new THREE.CircleGeometry(radius,numOfSegments));
-		ceiling.rotation.set(Math.PI/2,0,0);
-		ceiling.position.y=roomHeight;
-		circleRoom.add(ceiling);
-		
-		//wall with door
-		/*var wallForDoor = createWallForDoor(39,roomHeight);
-		wallForDoor.position.x=radius-2;*/
-		//circleRoom.add(wallForDoor);
-		
-		circleRoom.add(wall);
+		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius/2,radius/2,0.1/2)), true);
+		ceilingObject.rotation.set(Math.PI/2,0,0);
+		ceilingObject.position.y=roomHeight-0.05;
+		circleRoom.add(ceilingObject);
+
 		
 		//column
 		if(column)
 		{
-			var column = createMesh(new THREE.BoxGeometry(5,roomHeight,4));
-			column.position.set(radius-2,roomHeight/2,-39/2+2);
-			circleRoom.add(column);
+			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4),  new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
+			columnObject.position.set(radius-2,roomHeight/2,-39/2+2);
+			circleRoom.add(columnObject);
 		}
+		//wall for door
 		else
 		{
-			var wallForDoor = createWallForDoor(39,roomHeight);
-			wallForDoor.position.x=radius-2;
-			circleRoom.add(wallForDoor);
+			var wallForDoorGroup = createWallForDoor(39,roomHeight);
+			wallForDoorGroup.position.x=radius-2;
+			circleRoom.add(wallForDoorGroup);
 			
 			var door = createDoor(10, 8);
 			door.position.set(30+60*num,5,0);
@@ -977,23 +1047,32 @@
 		
 	}
 	
-
+	//--------------------------------------------------------------//
+	//-----------------------CREATE-OBJECTS-------------------------//
+	//--------------------------------------------------------------//
+	
+	//create the rooms
 	var rooms = [];
 	rooms[0] = createStandardRoom(true,false,0);
 	rooms[1] = createStandardRoom(false,true,1);
 	rooms[2] = createStandardRoom(true,false,2);
 	rooms[3] = createCircleRoom(false,3);
 	
+	
 	for(i=0; i<rooms.length; i++)
 		scene.add(rooms[i]);
 	
-	var surveillanceCamera = createSurveillanceCamera();	
+	for(i=0; i<bodies.length; i++)
+		{
+			world.addBody(bodies[i]);
+		}
+	
+	//create the security camera
+	var surveillanceCameraGroup = createSurveillanceCamera();	
 	var substainForSurvaillanceCamera = createSubstainForSurvaillanceCamera();
 	var securityCamera = new THREE.Group();
 	securityCamera.position.set( 30 - 2.2, 13, 0 );
-
-	securityCamera.add(surveillanceCamera, substainForSurvaillanceCamera);
-	
+	securityCamera.add(surveillanceCameraGroup, substainForSurvaillanceCamera);
 	scene.add(securityCamera);
 	
 	
@@ -1039,20 +1118,46 @@
 	
 	function surveillanceCameraAnimation()
 	{
-		surveillanceCamera.rotation.y=(Math.PI/6)*Math.sin(0.7*worldTime);
+		surveillanceCameraGroup.rotation.y=(Math.PI/6)*Math.sin(0.7*worldTime);
 	}
-	
 	function mapAnimation()
 	{
 		worldTime += clock.getDelta();
 		doorsAnimation();
-		surveillanceCameraAnimation()
-		
+		surveillanceCameraAnimation();
+		updatePhysics();
 		requestAnimationFrame(mapAnimation);
+		
+		if(keyboard.pressed("N"))
+			world.gravity.set(0,0,-300);
+			
+		if(keyboard.pressed("R"))
+		{
+			fixedBodies[4]=false;
+			//fixedBodies[4+8]=false;
+			
+		}
+		
+		if(keyboard.pressed("F"))
+		{
+			
+			var testMesh = createObject(new THREE.BoxGeometry( 0.8, 0.8, 0.8 ), new CANNON.Box ( new CANNON.Vec3(0.4,0.4,0.4)), false, 10 );
+			bodies[bodies.length-1].position.set(45,7,0);
+			testMesh.position.set(bodies[bodies.length-1].position);
+			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
+			bodies[bodies.length-1].velocityDamping = 0.0;
+			world.addBody(bodies[bodies.length-1]);
+			scene.add(testMesh);
+		}
+			
 	}
 	
 	mapAnimation();
 	
+	//***************************************************************************//
+	//*****************************-MAP SCRIPT-**********************************//
+	//**********************************END**************************************//
+	//***************************************************************************//
 </script>
 	
 	
