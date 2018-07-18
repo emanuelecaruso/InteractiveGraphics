@@ -484,8 +484,8 @@
 					upLegsObject[3*c+4].rotateZ(0.075);
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
-					knees[3*c].rotateZ(-0.15);
-					knees[3*c+4].rotateZ(-0.15);
+					knees[3*c].rotateZ(-0.17);
+					knees[3*c+4].rotateZ(-0.17);
 					
 					counter1++;
 					
@@ -516,11 +516,9 @@
 					upLegsObject[3*c+4].rotateZ(0.075);
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
-					knees[3*c].rotateZ(-0.15);
-					knees[3*c+4].rotateZ(-0.15);
-					
-					console.log(feet[3*c].getWorldPosition(vec3).y);
-					
+					knees[3*c].rotateZ(-0.17);
+					knees[3*c+4].rotateZ(-0.17);
+										
 					if(step1)
 					{
 						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
@@ -548,12 +546,12 @@
 					upLegsObject[5-c].rotateZ(-0.15);
 					upLegsObject[7-c].rotateZ(-0.15);
 					
-					upLegsObject[3*c].rotateZ(-0.075);
-					upLegsObject[3*c+4].rotateZ(-0.075);
+					upLegsObject[3*c].rotateZ(-0.075+(0.01*(counter1-8)));
+					upLegsObject[3*c+4].rotateZ(-0.075+(0.01*(counter1-8)));
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
-					knees[3*c].rotateZ(0.15);
-					knees[3*c+4].rotateZ(0.15);
+					knees[3*c].rotateZ(0.17);
+					knees[3*c+4].rotateZ(0.17);
 					
 					if(step2)
 					{
@@ -578,12 +576,12 @@
 					upLegsObject[5-c].rotateZ(0.15);
 					upLegsObject[7-c].rotateZ(0.15);
 					
-					upLegsObject[3*c].rotateZ(-0.075);
-					upLegsObject[3*c+4].rotateZ(-0.075);
+					upLegsObject[3*c].rotateZ(-0.075-(0.01*(counter1-12)));
+					upLegsObject[3*c+4].rotateZ(-0.075-(0.01*(counter1-12)));
 					upLegsObject[3*c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.05);
 					upLegsObject[3*c+4].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.05);
-					knees[3*c].rotateZ(0.15);
-					knees[3*c+4].rotateZ(0.15);
+					knees[3*c].rotateZ(0.17);
+					knees[3*c+4].rotateZ(0.17);
 					
 					if(step2)
 					{
@@ -657,6 +655,7 @@
 					counter1=0;
 					robot.translateX(sign3*0.1*robotScale);
 				}
+				
 			}
 		}
 		
