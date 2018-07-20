@@ -97,10 +97,62 @@
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
-
-
 		
 	window.addEventListener( 'resize', onWindowResize, false );
+
+
+		//SETTING THE BACKGROUND THEME (WITH TEXTURE)
+	var backgroundMesh, backgroundScene, backgroundCamera;
+
+	webGLRenderer.autoClear = false;
+	document.body.appendChild( webGLRenderer.domElement );
+
+	var manager = new THREE.LoadingManager();
+	manager.onLoad = init;
+
+	var loader = new THREE.TextureLoader( manager );
+
+
+	loader.crossOrigin = '';
+
+	loader.load( 'https://upload.wikimedia.org/wikipedia/commons/3/3a/ISS-45_Italy_night_view_%282%29.jpg', function( texture ) {
+		backgroundMesh = new THREE.Mesh(
+	    	new THREE.PlaneBufferGeometry(2,2,0),
+			new THREE.MeshBasicMaterial({
+	    		map: texture,
+			})
+			
+	    );
+
+
+		backgroundMesh.material.depthTest = false;
+		backgroundMesh.material.depthWrite = false;
+
+		backgroundScene = new THREE.Scene();
+		backgroundCamera = new THREE.Camera();
+		backgroundScene.add( backgroundCamera );
+		backgroundScene.add( backgroundMesh );
+	});
+
+	var animate = function () {
+		requestAnimationFrame( animate );
+
+		//controls.update();
+
+		//earthMesh.rotation.y += 0.01;
+
+
+		webGLRenderer.clear();
+		webGLRenderer.render( backgroundScene, backgroundCamera );
+		webGLRenderer.render( scene, camera );
+	};
+
+	function init() {
+		animate();
+	}; 
+	//END OF BACKGROUND SETTINGS
+
+
 	function onWindowResize()
 	{
 		camera.aspect = window.innerWidth / window.innerHeight;
