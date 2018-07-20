@@ -97,9 +97,8 @@
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
-
-
-		
+	
+	
 	window.addEventListener( 'resize', onWindowResize, false );
 	function onWindowResize()
 	{
@@ -836,6 +835,60 @@
 	var roomHasBackDoor = [];
 	var boxLength =1.7;
 	var boxDepth = 1.1;
+	
+	//-------------------------------------------------------------//
+	//------------------------BACKGROUND---------------------------//
+	//-------------------------------------------------------------//
+
+	window.addEventListener( 'resize', onWindowResize, false );
+
+
+	//SETTING THE BACKGROUND THEME (WITH TEXTURE)
+	var backgroundMesh, backgroundScene, backgroundCamera;
+
+	webGLRenderer.autoClear = false;
+	document.body.appendChild( webGLRenderer.domElement );
+
+	var manager = new THREE.LoadingManager();
+	manager.onLoad = init;
+
+	var loader = new THREE.TextureLoader( manager );
+
+
+	loader.crossOrigin = '';
+ 
+	loader.load( 'https://upload.wikimedia.org/wikipedia/commons/3/3a/ISS-45_Italy_night_view_%282%29.jpg', function( texture ) {
+		backgroundMesh = new THREE.Mesh(
+	    	new THREE.PlaneBufferGeometry(2,2,0),
+			new THREE.MeshBasicMaterial({
+	    		map: texture,
+			})
+			
+	    );
+
+
+		backgroundMesh.material.depthTest = false;
+		backgroundMesh.material.depthWrite = false;
+
+		backgroundScene = new THREE.Scene();
+		backgroundCamera = new THREE.Camera();
+		backgroundScene.add( backgroundCamera );
+		backgroundScene.add( backgroundMesh );
+	});
+ 
+	var animate = function () {
+		requestAnimationFrame( animate );
+ 		
+		webGLRenderer.clear();
+		webGLRenderer.render( backgroundScene, backgroundCamera );
+		webGLRenderer.render( scene, camera );
+	};
+
+	function init() {
+		animate();
+	}; 
+	
+		
 	
 	//-------------------------------------------------------------//
 	//----------------------CREATE-OBJECTS-------------------------//
