@@ -97,57 +97,10 @@
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+
 		
 	window.addEventListener( 'resize', onWindowResize, false );
-
-
-	//SETTING THE BACKGROUND THEME (WITH TEXTURE)
-	var backgroundMesh, backgroundScene, backgroundCamera;
-
-	webGLRenderer.autoClear = false;
-	document.body.appendChild( webGLRenderer.domElement );
-
-	var manager = new THREE.LoadingManager();
-	manager.onLoad = init;
-
-	var loader = new THREE.TextureLoader( manager );
-
-
-	loader.crossOrigin = '';
-
-	loader.load( 'https://upload.wikimedia.org/wikipedia/commons/3/3a/ISS-45_Italy_night_view_%282%29.jpg', function( texture ) {
-		backgroundMesh = new THREE.Mesh(
-	    	new THREE.PlaneBufferGeometry(2,2,0),
-			new THREE.MeshBasicMaterial({
-	    		map: texture,
-			})
-			
-	    );
-
-
-		backgroundMesh.material.depthTest = false;
-		backgroundMesh.material.depthWrite = false;
-
-		backgroundScene = new THREE.Scene();
-		backgroundCamera = new THREE.Camera();
-		backgroundScene.add( backgroundCamera );
-		backgroundScene.add( backgroundMesh );
-	});
-
-	var animate = function () {
-		requestAnimationFrame( animate );
-		
-		webGLRenderer.clear();
-		webGLRenderer.render( backgroundScene, backgroundCamera );
-		webGLRenderer.render( scene, camera );
-	};
-
-	function init() {
-		animate();
-	}; 
-	//END OF BACKGROUND SETTINGS
-
-
 	function onWindowResize()
 	{
 		camera.aspect = window.innerWidth / window.innerHeight;
@@ -163,16 +116,20 @@
 		mesh.castShadow = true;
 		mesh.receiveShadow = true;
 
-		var body = new CANNON.Body({
-			mass: mass
-		});
-		body.addShape(shape);
+		if(shape!=null)
+		{
+			var body = new CANNON.Body({
+				mass: mass
+			});
+			body.addShape(shape);
+			
+			meshes.push(mesh);
+			bodies.push(body);
+			fixedBodies.push(fixed);
+		}
+
+		return mesh;
 		
-		meshes.push(mesh);
-		bodies.push(body);
-		fixedBodies.push(fixed);
-		
-		return meshes[meshes.length-1];
 	}
 
 	function SpotLight()
@@ -205,7 +162,6 @@
 	
 	
 	
-------------------------------------------------------------------------------------------------------------------
 	
 	
 	
@@ -229,9 +185,9 @@
 	
 	var rotator = new THREE.Object3D();
 	
-	var sphereObject = createObject(new THREE.SphereGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale), true);
+	var sphereObject = createObject(new THREE.SphereBufferGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale), true);
 	
-	var headObject = createObject(new THREE.BoxGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)), true);
+	var headObject = createObject(new THREE.BoxBufferGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)), true);
 	headObject.position.set(0,1.3*robotScale,0);
 	
 	
@@ -258,9 +214,9 @@
 	
 	for(var i =0; i<8; i++)
 	{
-		upLegsObject[i]= createObject(new THREE.CylinderGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3),  new CANNON.Cylinder(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3), true);
+		upLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3),  new CANNON.Cylinder(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3), true);
 		knees[i]= new THREE.Object3D();
-		downLegsObject[i]= createObject(new THREE.CylinderGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3),  new CANNON.Cylinder(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3), true);
+		downLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3),  new CANNON.Cylinder(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3), true);
 		feet[i]= new THREE.Object3D();
 	}
 		
@@ -348,7 +304,7 @@
 				velocityDir =1;
 			}
 		}
-		else if(keyboard.pressed("A"))
+		else if(keyboard.pressed("A") & robot.position.x>=-20)
 		{
 			if (velocity>-maxvelocity)
 			{
@@ -885,11 +841,12 @@
 	//----------------------CREATE-OBJECTS-------------------------//
 	//-------------------------------------------------------------//
 
+	//:::::::::::STRUCTURE:::OBJECTS:::::::::::::
 		
 	//CREATE A WALL
 	function createWall(wallWidth, roomHeight)
 	{
-		var wallObject=createObject(new THREE.BoxGeometry(wallWidth,roomHeight,0.1), new CANNON.Box(new CANNON.Vec3(wallWidth/2,roomHeight/2,0.1/2)), true )
+		var wallObject=createObject(new THREE.BoxBufferGeometry(wallWidth,roomHeight,0.1), new CANNON.Box(new CANNON.Vec3(wallWidth/2,roomHeight/2,0.1/2)), true )
 		return wallObject;
 	}
 	
@@ -898,13 +855,13 @@
 	{
 		var starshipWindowGroup = new THREE.Group();
 		
-		var bottomSObject = createObject(new THREE.BoxGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
+		var bottomSObject = createObject(new THREE.BoxBufferGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
 		bottomSObject.position.set(0,-starshipWindowHeight/2+1,0);
-		var topSObject = createObject(new THREE.BoxGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
+		var topSObject = createObject(new THREE.BoxBufferGeometry(starshipWindowWidth,2,2), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,1,1)), true );
 		topSObject.position.set(0,starshipWindowHeight/2-1,0);
-		var leftSObject = createObject(new THREE.BoxGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
+		var leftSObject = createObject(new THREE.BoxBufferGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
 		leftSObject.position.set(-starshipWindowWidth/2,0,0);
-		var rightSObject = createObject(new THREE.BoxGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
+		var rightSObject = createObject(new THREE.BoxBufferGeometry(2,starshipWindowHeight,2), new CANNON.Box(new CANNON.Vec3(1,starshipWindowHeight/2,1)), true );
 		rightSObject.position.set(starshipWindowWidth/2,0,0)
 		
 		starshipWindowGroup.add(bottomSObject, topSObject, leftSObject, rightSObject);
@@ -915,7 +872,7 @@
 	//CREATE A DOOR
 	function createDoor(doorHeight, doorWidth)
 	{
-		var doorObject = createObject(new THREE.BoxGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)), true );
+		var doorObject = createObject(new THREE.BoxBufferGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)), true );
 		return doorObject;
 	}
 	
@@ -926,11 +883,11 @@
 		var doorWidth=8;
 		var doorHeight=10;
 		
-		var wall1Object = createObject(new THREE.BoxGeometry(2,height,(depth-doorWidth)/2), new CANNON.Box(new CANNON.Vec3(1,height/2,(depth-doorWidth)/4)), true);
+		var wall1Object = createObject(new THREE.BoxBufferGeometry(2,height,(depth-doorWidth)/2), new CANNON.Box(new CANNON.Vec3(1,height/2,(depth-doorWidth)/4)), true);
 		wall1Object.position.set(0,height/2,-(doorWidth/2)-((depth-doorWidth)/4));
-		var wall2Object = createObject(new THREE.BoxGeometry(2,height,(depth/2)-(doorWidth/2)), new CANNON.Box(new CANNON.Vec3(1,height/2,((depth/2)-(doorWidth/2))/2)), true);
+		var wall2Object = createObject(new THREE.BoxBufferGeometry(2,height,(depth/2)-(doorWidth/2)), new CANNON.Box(new CANNON.Vec3(1,height/2,((depth/2)-(doorWidth/2))/2)), true);
 		wall2Object.position.set(0,height/2,+(doorWidth/2)+((depth-doorWidth)/4));
-		var wall3Object = createObject(new THREE.BoxGeometry(2,height-doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1,(height-doorHeight)/2,doorWidth/2)), true);
+		var wall3Object = createObject(new THREE.BoxBufferGeometry(2,height-doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1,(height-doorHeight)/2,doorWidth/2)), true);
 		wall3Object.position.set(0,height-((height-doorHeight)/2),0);
 		
 		
@@ -941,14 +898,16 @@
 		return wallForDoorGroup;
 	}
 
+	//:::::::::::INTERNAL:::OBJECTS:::::::::::::
+	
 	//CREATE A SECURITY CAMERA
 	function createSurveillanceCamera()
 	{
 		var surveillanceCameraGroup = new THREE.Group();
 		
-		var boxObject = createObject(new THREE.BoxGeometry(boxLength,boxDepth,boxDepth), new CANNON.Box(new CANNON.Vec3(boxLength/2,boxDepth/2,boxDepth/2)), true);
+		var boxObject = createObject(new THREE.BoxBufferGeometry(boxLength,boxDepth,boxDepth), new CANNON.Box(new CANNON.Vec3(boxLength/2,boxDepth/2,boxDepth/2)), true);
 		
-		var eyeObject = createObject(new THREE.CylinderGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8),  new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,boxLength/3,8), true );
+		var eyeObject = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8),  new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,boxLength/3,8), true );
 		eyeObject.rotation.z=Math.PI/2;
 		eyeObject.position.x=-boxLength/2;
 		
@@ -961,9 +920,9 @@
 	{
 		var substainForSurveillanceCamera = new THREE.Group();
 		
-		var stick1Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3), true  );
+		var stick1Object = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3), true  );
 		
-		var stick2Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3), true );
+		var stick2Object = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3), true );
 		stick2Object.position.set(boxLength/2,+boxLength/10,0);
 		stick2Object.rotation.z=-Math.PI/4;
 		
@@ -973,7 +932,36 @@
 		
 		return substainForSurveillanceCamera;
 	}
-
+	
+	//CREATE A TABLET
+	function createTablet() 
+	{
+		var tabletGroup = new THREE.Group();
+		
+		var substainForTablet;
+		substainHeight=5;
+		substainAngle=Math.PI/16;
+		substainForTablet= createObject(new THREE.CylinderBufferGeometry(0.3,0.3,substainHeight,3), new CANNON.Cylinder(0.3,0.3,substainHeight,3), true);
+		substainForTablet.rotation.x=substainAngle;
+		substainForTablet.position.y=(substainHeight/2)*Math.cos(substainAngle);
+		
+		
+		var tabletObject;
+		tabletWidth=2.5;
+		tabletHeight=3.5;
+		tabletDepth=0.2;
+		tabletObject= createObject(new THREE.BoxBufferGeometry(tabletWidth, tabletHeight, tabletDepth), new CANNON.Box(new CANNON.Vec3(tabletWidth/2, tabletHeight/2, tabletDepth/2)), true);
+		tabletObject.rotation.x=-Math.PI/6;
+		tabletObject.position.set(0,substainHeight*Math.cos(substainAngle),(0.7*substainHeight)*Math.sin(substainAngle) );
+		
+		tabletGroup.add(substainForTablet, tabletObject);
+		
+		return tabletGroup;
+	}
+	
+	
+	//CREATE A COMPUTER
+	
 	
 	//-----------------------------------------------------//
 	//-----------------------ROOMS-------------------------//
@@ -990,7 +978,7 @@
 		var roomDepth = 39;
 		var roomHeight = 15;
 		
-		var floorObject = createObject(new THREE.BoxGeometry(roomWidth,roomDepth,0.1),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
+		var floorObject = createObject(new THREE.BoxBufferGeometry(roomWidth,roomDepth,0.1),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
 		floorObject.rotation.set(-Math.PI/2,0,0);
 		standardRoom.add(floorObject);
 
@@ -1019,7 +1007,7 @@
 		}
 
 		//ceiling
-		var ceilingObject = createObject(new THREE.BoxGeometry(roomWidth,roomDepth,0.1), new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
+		var ceilingObject = createObject(new THREE.BoxBufferGeometry(roomWidth,roomDepth,0.1), new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomDepth/2,0.1/2)), true);
 		ceilingObject.rotation.set(Math.PI/2,0,0);
 		ceilingObject.position.y=roomHeight;
 		standardRoom.add(ceilingObject);
@@ -1027,7 +1015,7 @@
 		//column
 		if(column)
 		{
-			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4), new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
+			var columnObject = createObject(new THREE.BoxBufferGeometry(5,roomHeight,4), new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
 			columnObject.position.set(roomWidth/2,roomHeight/2,-roomDepth/2+2);
 			standardRoom.add(columnObject);
 		}
@@ -1038,7 +1026,7 @@
 			wallForDoorGroup.position.x=roomWidth/2;
 			standardRoom.add(wallForDoorGroup);
 			
-			var door = createDoor(10, 8);
+			var door = createDoor(10, 9);
 			door.position.set(30+60*num,5,0);
 			
 			doorsArray[num]=door;
@@ -1065,7 +1053,7 @@
 		var roomHeight = 15;
 		
 		//floor circle
-		var floorObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
+		var floorObject = createObject(new THREE.CircleBufferGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
 		floorObject.rotation.set(-Math.PI/2,0,0);
 		floorObject.position.y=0.05;
 		circleRoom.add(floorObject);
@@ -1084,7 +1072,7 @@
 		circleRoom.add(wallGroup);
 		
 		//ceiling
-		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius/2,radius/2,0.1/2)), true);
+		var ceilingObject = createObject(new THREE.CircleBufferGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius/2,radius/2,0.1/2)), true);
 		ceilingObject.rotation.set(Math.PI/2,0,0);
 		ceilingObject.position.y=roomHeight-0.05;
 		circleRoom.add(ceilingObject);
@@ -1093,7 +1081,7 @@
 		//column
 		if(column)
 		{
-			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4),  new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
+			var columnObject = createObject(new THREE.BoxBufferGeometry(5,roomHeight,4),  new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
 			columnObject.position.set(radius-2,roomHeight/2,-39/2+2);
 			circleRoom.add(columnObject);
 		}
@@ -1104,7 +1092,7 @@
 			wallForDoorGroup.position.x=radius-2;
 			circleRoom.add(wallForDoorGroup);
 			
-			var door = createDoor(10, 8);
+			var door = createDoor(10, 9);
 			door.position.set(30+60*num,5,0);
 			
 			doorsArray[num]=door;
@@ -1119,8 +1107,68 @@
 		
 	}
 	
+	//-------------------------------------------------------------//
+	//-------------------CREATE-ROOMS-OBJECTS----------------------//
+	//-------------------------------------------------------------//
+	
+	//::::::::::::::::::::::ROOM1:::::::::::::::::::::://
+	
+	function createObjectForRoom1()
+	{
+		var wall = createWall(39,15);
+		wall.rotation.y=Math.PI/2;
+		wall.position.set(-30,7.5,0);
+		scene.add(wall);
+		
+		var box1 = createObject(new THREE.BoxBufferGeometry( 12, 4.5, 12 ), new CANNON.Box ( new CANNON.Vec3(6,2.25,6)), true );
+		box1.position.set(24, 2.25, -13.5);
+		
+		var cylinder = [];
+		
+		for(i=0; i<4; i++)
+		{
+			cylinder[i] = createObject(new THREE.CylinderBufferGeometry( 1.5, 1.5, 10.5, 6 ), new CANNON.Cylinder(1.5, 1.5, 10.5, 6), true);
+		}
+		
+		cylinder[0].position.set(-2.2,7.5,-2.2);
+		cylinder[1].position.set(2.2,7.5,-2.2);
+		cylinder[2].position.set(-2.2,7.5,2.2);
+		cylinder[3].position.set(2.2,7.5,2.2);
+		
+		for(i=0; i<4; i++)
+		{
+			box1.add(cylinder[i]);
+		}
+		scene.add(box1);
+		
+		var box2 = createObject(new THREE.BoxBufferGeometry( 9, 4.5, 1 ), new CANNON.Box ( new CANNON.Vec3(4.5,2.25,0.5)), true );
+		box2.position.set(13.5, 2.25, -19);
+		scene.add(box2);
+		
+		var box3 = createObject(new THREE.BoxBufferGeometry( 2, 15, 1 ), new CANNON.Box ( new CANNON.Vec3(1,7.5,0.5)), true );
+		box3.position.set(8.5, 7.5, -19);
+		scene.add(box3);
+		
+		var box4 = createObject(new THREE.BoxBufferGeometry( 2, 15, 1 ), new CANNON.Box ( new CANNON.Vec3(1,7.5,0.5)), true );
+		box4.position.set(-4, 7.5, -19);
+		scene.add(box4);
+		
+		var box5 = createObject(new THREE.BoxBufferGeometry( 2, 4.5, 10 ), new CANNON.Box ( new CANNON.Vec3(1,2.25,5)), true );
+		box5.position.set(-4, 2.25, -14);
+		scene.add(box5);
+		
+		var tablet = createTablet();
+		tablet.position.set(25,0,-5);
+		scene.add(tablet);
+		
+	}
+	
+	createObjectForRoom1();
 
-//-----------------TUBE-LIGHT-----------------------//
+
+	//-------------------------------------------------------------//
+	//-------------------------TUBE-LIGHT--------------------------//
+	//-------------------------------------------------------------//
 
 	function roomLight(num)
 	{
@@ -1141,28 +1189,25 @@
 
 	}
 
-	
-
-//-------------------------------------------------------------//
 
 
 	//--------------------------------------------------------------//
 	//-----------------------CREATE-OBJECTS-------------------------//
 	//--------------------------------------------------------------//
 	
-	//create the edge
-	var bound = createObject(new THREE.BoxGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(3000,30,0.005)), true );
-	bound.position.z=20;
-	//bound.rotateZ(-Math.PI/2);
-	scene.add(bound);
 	
 	//create the rooms
 	var rooms = [];
-	rooms[0] = createStandardRoom(true,false,0);
-	rooms[1] = createStandardRoom(false,false,1);
+	rooms[0] = createStandardRoom(false,false,0);
+	rooms[1] = createStandardRoom(false,true,1);
 	rooms[2] = createStandardRoom(true,false,2);
 	rooms[3] = createCircleRoom(false,3);
 	
+	//create the edge
+	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
+	bound.position.set((rooms.length*30)-30,7.5,20);
+	//bound.rotateZ(-Math.PI/2);
+	scene.add(bound);
 	
 	for(i=0; i<rooms.length; i++)
 		scene.add(rooms[i]);
@@ -1246,7 +1291,7 @@
 		if(keyboard.pressed("F"))
 		{
 			
-			var testMesh = createObject(new THREE.BoxGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
+			var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
 			bodies[bodies.length-1].position.set(45,7,0);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
