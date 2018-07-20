@@ -101,7 +101,7 @@
 	window.addEventListener( 'resize', onWindowResize, false );
 
 
-		//SETTING THE BACKGROUND THEME (WITH TEXTURE)
+	//SETTING THE BACKGROUND THEME (WITH TEXTURE)
 	var backgroundMesh, backgroundScene, backgroundCamera;
 
 	webGLRenderer.autoClear = false;
@@ -136,12 +136,7 @@
 
 	var animate = function () {
 		requestAnimationFrame( animate );
-
-		//controls.update();
-
-		//earthMesh.rotation.y += 0.01;
-
-
+		
 		webGLRenderer.clear();
 		webGLRenderer.render( backgroundScene, backgroundCamera );
 		webGLRenderer.render( scene, camera );
