@@ -91,7 +91,7 @@
 	
 	// position and point the camera to the center of the scene
 	camera.position.x = 0;
-	camera.position.y = 12;
+	camera.position.y = 10.5;
 	camera.position.z = 20;
 	camera.lookAt(new THREE.Vector3(0, 5, 0));
 	
@@ -108,9 +108,12 @@
 	}
 
 	
-	function createObject(meshgeom,shape,fixed,mass=0) {
-
-		var meshMaterial = new THREE.MeshPhongMaterial();
+	function createObject(meshgeom,shape,fixed,mass=0, side=false) {
+		if (!side)
+			var meshMaterial = new THREE.MeshPhongMaterial( );
+		else
+			var meshMaterial = new THREE.MeshPhongMaterial( {side: THREE.DoubleSide} );
+			
 		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
 		mesh.castShadow = true;
 		mesh.receiveShadow = true;
@@ -303,7 +306,7 @@
 				velocityDir =1;
 			}
 		}
-		else if(keyboard.pressed("A") & robot.position.x>=-20)
+		else if(keyboard.pressed("A") & robot.position.x>=-11)
 		{
 			if (velocity>-maxvelocity)
 			{
@@ -1013,8 +1016,120 @@
 	}
 	
 	
-	//CREATE A COMPUTER
+	//CREATE A CONTROL STATION
+	function createControlStation() 
+	{
+		var controlStation = new THREE.Group();
+		
+		baseHeight = 4;
+		baseRadius =4;
+		var base = createObject(new THREE.CylinderBufferGeometry(baseRadius,baseRadius*0.7,baseHeight,8), new CANNON.Cylinder(baseRadius*0.7,baseRadius,baseHeight,8), true);
+		base.position.y=baseHeight/2;
+		controlStation.add(base);
+		
+		var top = createObject(new THREE.CylinderBufferGeometry(baseRadius*0.6,baseRadius*0.42,0.3,16), new CANNON.Cylinder(baseRadius*0.6,baseRadius*0.42,0.3,16), true);
+		top.position.y=baseHeight;
+		controlStation.add(top);
+		
+		for (i=0; i<4; i++)
+		{
+			var substain = createObject(new THREE.CylinderBufferGeometry(0.2,0.2,baseHeight*2.5,3), new CANNON.Cylinder(0.2,0.2,baseHeight*2.5,4), true);
+			substain.rotation.y=((Math.PI*3)/8)-((Math.PI*i)/4);
+			substain.position.set(0,baseHeight*1.25,0);
+			substain.translateZ(-baseRadius);
+			controlStation.add(substain);
+		}
+		
+		tabletWidth=baseRadius*Math.sin(Math.PI/4);
+		tabletHeight=baseHeight*0.4;
+		tabletDepth=0.2;
+		for (i=0; i<4; i++)
+		{
+			var angle = ((Math.PI*3)/8)-((Math.PI*i)/4);
+			for(j=0; j<3; j++)
+			{
+				var tablet= createObject(new THREE.BoxBufferGeometry(tabletWidth, tabletHeight, tabletDepth), new CANNON.Box(new CANNON.Vec3(tabletWidth/2, tabletHeight/2, tabletDepth/2)), true);
+				tablet.rotation.y=angle;
+				tablet.position.y=(baseHeight*1.5)+(j*baseHeight/2)
+				tablet.translateZ(-baseRadius+0.2);
+				controlStation.add(tablet);
+			}
+		}
+		
+		return controlStation;
+	}
 	
+	//CREATE BOX AT WALL
+	function createBoxAtWall() 
+	{
+		var boxAtWall = new THREE.Group();
+		
+		boxHeight = 3;
+		boxWidth = 2;
+		boxDepth = 1;
+		height = 8;
+		
+		var box = createObject(new THREE.BoxBufferGeometry(boxDepth,boxHeight,boxWidth), new CANNON.Box(new CANNON.Vec3(boxDepth/2,boxHeight/2,boxWidth/2)), true);
+		box.position.y=height;
+		
+		var tube1 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
+		tube1.position.set(0, height+boxHeight/2+((15-height)/2), boxWidth/4);
+		
+		var tube2 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
+		tube2.position.set(0, height+boxHeight/2+((15-height)/2), -boxWidth/4);
+		
+		boxAtWall.add(box,tube1,tube2)
+		return boxAtWall;
+	}
+	
+	
+	//CREATE CAPSULE
+	var doorCapsule;
+	function createCapsule(root)
+	{
+		var capsule = new THREE.Group();
+		
+		var top1 = createObject(new THREE.TorusBufferGeometry(robotScale*2.3,robotScale*0.2,5,18),null, true);
+		top1.position.set(-0.1, 9, 0);
+		top1.rotation.x=Math.PI/2;
+		
+		var top2 = createObject(new THREE.CylinderBufferGeometry(robotScale,robotScale*2.2,2,18), new CANNON.Cylinder(robotScale,robotScale*2.2,2,18), true);
+		top2.position.set(-0.1, 10+robotScale*0.2, 0);
+		
+		var tube = createObject(new THREE.CylinderBufferGeometry(robotScale,robotScale,5,18), new CANNON.Cylinder(robotScale,robotScale,5,18), true);
+		tube.position.set(-0.1, 13.5, 0);
+		
+		var halfCylinder1= createObject(new THREE.CylinderBufferGeometry(robotScale*2.5,robotScale*2.5,9,18,1,true,Math.PI,Math.PI), new CANNON.Cylinder(robotScale*2.5,robotScale*2.5,9,18), true,0,true);
+		halfCylinder1.position.y=4.5;
+		
+		var halfCylinder2= createObject(new THREE.CylinderBufferGeometry(robotScale*2.4,robotScale*2.47,9,18,1,true,0,Math.PI), null, true,0,true);
+		if(root)doorCapsule=halfCylinder2;
+		halfCylinder2.position.set(-0.1,4.5,0);
+		
+		capsule.add(halfCylinder1,halfCylinder2,top1, top2, tube);
+		return capsule;
+	}
+	function createBoxAtWall() 
+	{
+		var boxAtWall = new THREE.Group();
+		
+		boxHeight = 3;
+		boxWidth = 2;
+		boxDepth = 1;
+		height = 8;
+		
+		var box = createObject(new THREE.BoxBufferGeometry(boxDepth,boxHeight,boxWidth), new CANNON.Box(new CANNON.Vec3(boxDepth/2,boxHeight/2,boxWidth/2)), true);
+		box.position.y=height;
+		
+		var tube1 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
+		tube1.position.set(0, height+boxHeight/2+((15-height)/2), boxWidth/4);
+		
+		var tube2 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
+		tube2.position.set(0, height+boxHeight/2+((15-height)/2), -boxWidth/4);
+		
+		boxAtWall.add(box,tube1,tube2)
+		return boxAtWall;
+	}
 	
 	//-----------------------------------------------------//
 	//-----------------------ROOMS-------------------------//
@@ -1214,11 +1329,29 @@
 		tablet.position.set(25,0,-5);
 		scene.add(tablet);
 		
+		var controlStation = createControlStation();
+		controlStation.position.set(2,0,-15);
+		scene.add(controlStation);
+		
+		var boxAtWall = createBoxAtWall();
+		boxAtWall.position.set(29,0,8);
+		scene.add(boxAtWall);
+		
+		var capsule1 = createCapsule(true);
+		capsule1.position.set(-24,0,0);
+		
+		var capsule2 = createCapsule();
+		capsule2.position.set(-24,0,10);
+		
+		var capsule3 = createCapsule();
+		capsule3.position.set(-24,0,-10);
+		
+		scene.add(capsule1,capsule2,capsule3);
 	}
 	
 	createObjectForRoom1();
-
-
+	
+	
 	//-------------------------------------------------------------//
 	//-------------------------TUBE-LIGHT--------------------------//
 	//-------------------------------------------------------------//
@@ -1253,8 +1386,9 @@
 	var rooms = [];
 	rooms[0] = createStandardRoom(false,false,0);
 	rooms[1] = createStandardRoom(false,true,1);
-	rooms[2] = createStandardRoom(true,false,2);
-	rooms[3] = createCircleRoom(false,3);
+	rooms[2] = createStandardRoom(true,true,2);
+	rooms[3] = createStandardRoom(false,false,3);
+	rooms[4] = createCircleRoom(false,4);
 	
 	//create the edge
 	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
@@ -1352,7 +1486,8 @@
 			world.addBody(bodies[bodies.length-1]);
 			scene.add(testMesh);
 		}
-			
+		
+		doorCapsule.rotateY(0.2);
 	}
 	
 	mapAnimation();
