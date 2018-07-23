@@ -1507,11 +1507,11 @@
 	
 	var triggers = 0;
 	
-	var dumpY=5;
-	var dumpZ=15;
-	var dumpLAx=-120+robot.position.x+velocity/2;
-	var dumpLAz=50;
-	var inst;
+	var dumpY=0;
+	var dumpZ=0;
+	var dumpLAx=0;
+	var dumpLAz=0;
+	
 	function director()
 	{
 		
@@ -1521,10 +1521,10 @@
 		//window director
 		if(robot.position.x>30+60 & robot.position.x<30+60*2 & triggers!=2)
 		{
-			dumpY=5;
-			dumpZ=15;
-			dumpLAx=-120+robot.position.x+velocity/2;
-			dumpLAz=50;
+			dumpY=5+dumpY;
+			dumpZ=15+dumpZ;
+			dumpLAx=-120+dumpLAx+robot.position.x+velocity/2;
+			dumpLAz=50+dumpLAz;
 			triggers=2;
 		}
 		if((robot.position.x<=30+60 | robot.position.x>=30+60*2) & triggers==2)
@@ -1537,9 +1537,7 @@
 			camera.position.x = robot.position.x+velocity/2;				
 			camera.position.y=10+dumpY;
 			camera.position.z=20+dumpZ;
-			console.log(camera.rotation);
-			console.log(camera.rotation);
-			triggers=3;
+			triggers=0;
 		}
 		
 		
@@ -1547,8 +1545,15 @@
 		{
 			
 			case 0:
-				camera.position.x = robot.position.x+velocity/2;
-				camera.lookAt(robot.position.x+velocity/2,5,0);
+				camera.position.x = robot.position.x+velocity/2;				
+				camera.position.y=10+dumpY;
+				camera.position.z=20+dumpZ;
+				camera.lookAt(robot.position.x+velocity/2+dumpLAx,5,0+dumpLAz);
+
+				dumpY=dumpY/1.033;
+				dumpZ=dumpZ/1.033;
+				dumpLAx=dumpLAx/1.033;
+				dumpLAz=dumpLAz/1.033;
 				break;
 				
 			case 1:
@@ -1572,58 +1577,13 @@
 				break;
 				
 			case 3:
-				camera.position.x = robot.position.x+velocity/2;				
-				camera.position.y=10+dumpY;
-				camera.position.z=20+dumpZ;
-				camera.lookAt(robot.position.x+velocity/2+dumpLAx,5,0+dumpLAz);
-
-				dumpY=dumpY/1.033;
-				dumpZ=dumpZ/1.033;
-				dumpLAx=dumpLAx/1.033;
-				dumpLAz=dumpLAz/1.033;
-				break;
 				
-			case 4:
+				break;
 
-				break;
-				
-			case 5:
-				break;
 				
 		}
 	}
 	
-		/*
-		
-		//window director
-		if(triggerWindow)
-		{
-			camera.position.z=5+dumpZ;
-			camera.position.y=5+dumpY;
-			camera.lookAt(120,5,-20);
-			
-			if (dumpZ>0)
-			dumpZ-=0.2;
-			if (dumpY>0)
-			dumpY-=0.2;
-		}
-		else
-		{
-			camera.position.z=20;
-			camera.position.y=10;
-		}
-		
-		//activate trigger for director at leftEdge
-		
-		
-		//standard director
-		else if (robot.position.x+velocity/2>camera.position.x || !triggerLeftEdge)
-		{
-			camera.position.x = robot.position.x+velocity/2;
-			if (robot.position.x>0)
-				triggerLeftEdge=false;
-		}
-	}*/
 	
 	//***************************************************************************//
 	//*****************************-MAP SCRIPT-**********************************//
