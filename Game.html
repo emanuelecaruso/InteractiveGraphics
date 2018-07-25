@@ -108,11 +108,11 @@
 	}
 
 	
-	function createObject(meshgeom,shape,fixed,mass=0, side=false) {
+	function createObject(meshgeom,shape,fixed,mass=0, side=false ) {
 		if (!side)
 			var meshMaterial = new THREE.MeshPhongMaterial( );
 		else
-			var meshMaterial = new THREE.MeshPhongMaterial( {side: THREE.DoubleSide} );
+			var meshMaterial = new THREE.MeshPhongMaterial( {side: THREE.BackSide} );
 			
 		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
 		mesh.castShadow = true;
@@ -190,7 +190,7 @@
 	var sphereObject = createObject(new THREE.SphereBufferGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale), true);
 	
 	var headObject = createObject(new THREE.BoxBufferGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)), true);
-	headObject.position.set(0,1.3*robotScale,0);
+	headObject.position.set(0,1.25*robotScale,0);
 	
 	
 	var upLegsObject = [];
@@ -484,7 +484,7 @@
 	
 	function legSpasm()
 	{
-		if ( !legIsDoingSpasm && Math.random() >= 0.99)
+		if ( !legIsDoingSpasm && Math.random() >= 0.98)
 		{
 			legIsDoingSpasm=true;
 			spasmCounter=-5;
@@ -973,6 +973,30 @@
 
 	//:::::::::::INTERNAL:::OBJECTS:::::::::::::
 	
+	//CREATE A BASE
+	function createBase(baseWidth, baseHeight, baseDepth, nSteps=4)
+	{
+		var base = new THREE.Group();
+		
+		var mainBox= createObject(new THREE.BoxBufferGeometry(baseWidth-baseWidth/6, baseHeight, baseDepth), new CANNON.Box(new CANNON.Vec3((baseWidth-baseWidth/12)/2, baseHeight/2, baseDepth/2)), true);
+		mainBox.position.y= baseHeight/2;
+		var platform= createObject(new THREE.BoxBufferGeometry(baseWidth/6, baseHeight, baseDepth/2), new CANNON.Box(new CANNON.Vec3(baseWidth/12, baseHeight/2, baseDepth/4)), true);
+		platform.position.set(baseWidth/2,baseHeight/2, -baseDepth/4);
+		var stairs = new THREE.Group();
+		
+		for (i=0; i<nSteps; i++)
+		{
+			var step= createObject(new THREE.BoxBufferGeometry(baseWidth/6, baseHeight/nSteps, (baseDepth/2)-((baseDepth/2)/nSteps)*i), new CANNON.Box(new CANNON.Vec3(baseWidth/12, baseHeight/2, baseDepth/4)), true);
+			step.position.set(0,(baseHeight/(2*nSteps))+(i*(baseHeight/nSteps)),-i*((baseDepth/2)-((baseDepth/2)/nSteps))/4);
+			stairs.add(step);
+		}
+		stairs.position.set(baseWidth/2,0,baseDepth/4);
+		
+		base.add(mainBox,platform,stairs);
+		
+		return base;
+	}
+	
 	//CREATE A SECURITY CAMERA
 		var securityCameraForAnimation = [];
 	function createsecurityCamera()
@@ -1037,7 +1061,44 @@
 		return tabletGroup;
 	}
 	
-	
+	//CREATE A LONG TABLET
+	function createLongTablet() 
+	{
+		var longTabletGroup = new THREE.Group();
+		var substainHeight=5;
+		var substainAngle=Math.PI/16;
+
+		
+		var substainForTablet0;
+			
+			substainForTablet0= createObject(new THREE.CylinderBufferGeometry(0.3,0.3,substainHeight,3), new CANNON.Cylinder(0.3,0.3,substainHeight,3), true);
+			substainForTablet0.rotation.x=substainAngle;
+			substainForTablet0.position.y=(substainHeight/2)*Math.cos(substainAngle);
+							
+			substainForTablet1= createObject(new THREE.CylinderBufferGeometry(0.3,0.3,substainHeight,3), new CANNON.Cylinder(0.3,0.3,substainHeight,3), true);
+			substainForTablet1.rotation.x=substainAngle;
+			substainForTablet1.position.y=(substainHeight/2)*Math.cos(substainAngle);
+			substainForTablet1.position.x=3;
+			
+			substainForTablet2= createObject(new THREE.CylinderBufferGeometry(0.3,0.3,substainHeight,3), new CANNON.Cylinder(0.3,0.3,substainHeight,3), true);
+			substainForTablet2.rotation.x=substainAngle;
+			substainForTablet2.position.y=(substainHeight/2)*Math.cos(substainAngle);
+			substainForTablet2.position.x=-3;
+			
+			longTabletGroup.add(substainForTablet0, substainForTablet1, substainForTablet2);
+		
+		var tabletObject;
+		tabletWidth=8;
+		tabletHeight=3.5;
+		tabletDepth=0.2;
+		tabletObject= createObject(new THREE.BoxBufferGeometry(tabletWidth, tabletHeight, tabletDepth), new CANNON.Box(new CANNON.Vec3(tabletWidth/2, tabletHeight/2, tabletDepth/2)), true);
+		tabletObject.rotation.x=-Math.PI/6;
+		tabletObject.position.set(0,substainHeight*Math.cos(substainAngle),(0.7*substainHeight)*Math.sin(substainAngle) );
+		
+		longTabletGroup.add(tabletObject);
+		
+		return longTabletGroup;
+	}
 	//CREATE A CONTROL STATION
 	function createControlStation() 
 	{
@@ -1115,43 +1176,55 @@
 		top1.position.set(-0.1, 9, 0);
 		top1.rotation.x=Math.PI/2;
 		
-		var top2 = createObject(new THREE.CylinderBufferGeometry(robotScale,robotScale*2.2,2,18), new CANNON.Cylinder(robotScale,robotScale*2.2,2,18), true);
+		var top2 = createObject(new THREE.CylinderBufferGeometry(robotScale,robotScale*2.4,2.2,18), new CANNON.Cylinder(robotScale,robotScale*2.2,2.1,18), true);
 		top2.position.set(-0.1, 10+robotScale*0.2, 0);
 		
 		var tube = createObject(new THREE.CylinderBufferGeometry(robotScale,robotScale,5,18), new CANNON.Cylinder(robotScale,robotScale,5,18), true);
 		tube.position.set(-0.1, 13.5, 0);
 		
-		var halfCylinder1= createObject(new THREE.CylinderBufferGeometry(robotScale*2.5,robotScale*2.5,9,18,1,true,Math.PI,Math.PI), new CANNON.Cylinder(robotScale*2.5,robotScale*2.5,9,18), true,0,true);
+		var halfCylinder1= createObject(new THREE.CylinderBufferGeometry(robotScale*2.5,robotScale*2.5,9,18,1,true,Math.PI,Math.PI), new CANNON.Cylinder(robotScale*2.5,robotScale*2.5,9,18), true,0);
 		halfCylinder1.position.y=4.5;
+		var edge1_1= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+		edge1_1.position.z= robotScale*2.35;
+		edge1_1.rotation.y= Math.PI/2;
+		var edge1_2= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+		edge1_2.position.z= -robotScale*2.35;
+		edge1_2.rotation.y= -Math.PI/2;
+		halfCylinder1.add(edge1_1,edge1_2);
 		
-		var halfCylinder2= createObject(new THREE.CylinderBufferGeometry(robotScale*2.4,robotScale*2.47,9,18,1,true,0,Math.PI), null, true,0,true);
-		if(root)doorCapsule=halfCylinder2;
+		var halfCylinder2= createObject(new THREE.CylinderBufferGeometry(robotScale*2.2,robotScale*2.2,9,18,1,true,0,Math.PI), null, true,0);
 		halfCylinder2.position.set(-0.1,4.5,0);
 		
-		capsule.add(halfCylinder1,halfCylinder2,top1, top2, tube);
+		capsule.add(halfCylinder1, top1, top2, tube);
+		
+		if(root)
+		{
+			var halfCylinder1Back= createObject(new THREE.CylinderBufferGeometry(robotScale*2.2,robotScale*2.2,9,18,1,true,Math.PI,Math.PI), null, true,0,true);
+			halfCylinder1Back.position.y=4.5;
+			
+			var edge2_1= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+			edge2_1.position.z= robotScale*2.05;
+			edge2_1.rotation.y= Math.PI/2;
+			var edge2_2= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+			edge2_2.position.z= -robotScale*2.05;
+			edge2_2.rotation.y= -Math.PI/2;
+			
+			var halfCylinder2Back= createObject(new THREE.CylinderBufferGeometry(robotScale*1.9,robotScale*1.9,9,18,1,true,0,Math.PI), null, true,0,true);
+			//halfCylinder2Back.position.set(-0.1,4.5,0);
+			
+			halfCylinder2.add(halfCylinder2Back);
+			doorCapsule=halfCylinder2;
+			doorCapsule.add(halfCylinder2Back,edge2_1,edge2_2);
+			capsule.add(halfCylinder1Back, doorCapsule);
+			//scene.add(edge1)
+		}
+		else(capsule.add(halfCylinder2))
+		
+		
 		return capsule;
 	}
-	function createBoxAtWall() 
-	{
-		var boxAtWall = new THREE.Group();
-		
-		boxHeight = 3;
-		boxWidth = 2;
-		boxDepth = 1;
-		height = 8;
-		
-		var box = createObject(new THREE.BoxBufferGeometry(boxDepth,boxHeight,boxWidth), new CANNON.Box(new CANNON.Vec3(boxDepth/2,boxHeight/2,boxWidth/2)), true);
-		box.position.y=height;
-		
-		var tube1 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
-		tube1.position.set(0, height+boxHeight/2+((15-height)/2), boxWidth/4);
-		
-		var tube2 = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,15-height,6), new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,15-height,6), true);
-		tube2.position.set(0, height+boxHeight/2+((15-height)/2), -boxWidth/4);
-		
-		boxAtWall.add(box,tube1,tube2)
-		return boxAtWall;
-	}
+	
+
 	
 	//-----------------------------------------------------//
 	//-----------------------ROOMS-------------------------//
@@ -1239,7 +1312,7 @@
 		var circleRoom = new THREE.Group();
 	
 		var numOfSegments = 32;
-		var radius = 32;
+		var radius = 31.5;
 		var roomHeight = 15;
 		
 		//floor circle
@@ -1377,6 +1450,42 @@
 	}
 	
 	
+	//::::::::::::::::::::::ROOM2:::::::::::::::::::::://
+	
+	function createObjectForRoom2()
+	{
+		var objects = new THREE.Group();
+		
+		var baseHeight = 2.5;
+		var base = createBase(56.5, baseHeight, 15, 4);
+		base.position.set(-5.5,0,-12.5);
+		objects.add(base);
+
+		for(i=0; i<4; i++)
+		{
+			var longTablet = createLongTablet();
+			longTablet.position.set(-20+i*10,baseHeight,-17)
+			objects.add(longTablet);
+		}
+		
+		var boxAtWall = createBoxAtWall();
+		boxAtWall.position.set(-29,0,-8);
+		boxAtWall.rotation.y=Math.PI;
+		objects.add(boxAtWall);
+		
+		var box = createObject(new THREE.BoxBufferGeometry( 5, 4.5, 13 ), new CANNON.Box ( new CANNON.Vec3(2.5,2.25,6.5)), true );
+		box.position.set(30, 2.25, -13);		
+		var column = createObject(new THREE.CylinderBufferGeometry( 1.5, 1.5, 10.5, 6 ), new CANNON.Cylinder(3, 3, 10.5, 6), true);
+		column.position.set(30, 9.75, -9);
+		objects.add(box,column);
+
+		
+		objects.position.x=60;
+		scene.add(objects);
+		
+		return objects;
+	}
+	
 	
 	//-------------------------------------------------------------//
 	//-------------------------TUBE-LIGHT--------------------------//
@@ -1414,11 +1523,12 @@
 	rooms[2] = createStandardRoom(true,true,2);
 	rooms[3] = createStandardRoom(false,false,3);
 	rooms[4] = createCircleRoom(false,4);
+	rooms[5] = createStandardRoom(false,false,5);
 	
 	//create objects inside rooms
 	var roomsObjects = []
 	roomsObjects[0]=createObjectForRoom1();
-
+	roomsObjects[1]=createObjectForRoom2();
 	//create the edge
 	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
 	bound.position.set((rooms.length*30)-30,7.5,20);
@@ -1478,17 +1588,18 @@
 		
 		//doorCapsule animation
 		if(robot.position.x<-9)
+		
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
-				doorCapsule.rotateY(0.1);
+				doorCapsule.rotateY(0.07);
 			}
 		}
 		else if(robot.position.x>-9)
 		{
 			if(doorCapsule.rotation.y<=0)
 			{
-				doorCapsule.rotateY(0.1);
+				doorCapsule.rotateY(0.07);
 			}
 		}
 		
@@ -1554,7 +1665,7 @@
 			dampY=5+dampY;
 			dampZ=15+dampZ;
 			dampLAx=-120+dampLAx+robot.position.x+velocity/2;
-			dampLAz=50+dampLAz;
+			dampLAz=80+dampLAz;
 			triggers=2;
 		}
 		
@@ -1590,7 +1701,7 @@
 				camera.position.x = robot.position.x+velocity/2;				
 				camera.position.y=5+dampY;
 				camera.position.z=5+dampZ;
-				camera.lookAt(120+dampLAx,5,-50+dampLAz);
+				camera.lookAt(120+dampLAx,5,-80+dampLAz);
 				dampY=dampY/1.033;
 				dampZ=dampZ/1.033;
 				dampLAx=dampLAx/1.033;
@@ -1602,7 +1713,7 @@
 					dampY=camera.position.y-10;
 					dampZ=camera.position.z-20;
 					dampLAx=120+dampLAx-(robot.position.x+velocity/2);
-					dampLAz=-50+dampLAz;
+					dampLAz=-80+dampLAz;
 					camera.lookAt(robot.position.x+velocity/2+dampLAx,5,0+dampLAz);
 					camera.position.x = robot.position.x+velocity/2;				
 					camera.position.y=10+dampY;
