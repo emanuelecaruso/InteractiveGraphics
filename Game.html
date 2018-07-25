@@ -110,9 +110,9 @@
 	
 	function createObject(meshgeom,shape,fixed,mass=0, side=false ) {
 		if (!side)
-			var meshMaterial = new THREE.MeshPhongMaterial( );
+			var meshMaterial = new THREE.MeshNormalMaterial( );
 		else
-			var meshMaterial = new THREE.MeshPhongMaterial( {side: THREE.BackSide} );
+			var meshMaterial = new THREE.MeshNormalMaterial( {side: THREE.BackSide} );
 			
 		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
 		mesh.castShadow = true;
@@ -1202,10 +1202,10 @@
 			var halfCylinder1Back= createObject(new THREE.CylinderBufferGeometry(robotScale*2.2,robotScale*2.2,9,18,1,true,Math.PI,Math.PI), null, true,0,true);
 			halfCylinder1Back.position.y=4.5;
 			
-			var edge2_1= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+			var edge2_1= createObject(new THREE.PlaneBufferGeometry(robotScale*0.3,9), null, true);
 			edge2_1.position.z= robotScale*2.05;
-			edge2_1.rotation.y= Math.PI/2;
-			var edge2_2= createObject(new THREE.BoxBufferGeometry(robotScale*0.3,9,0.3), null, true);
+			edge2_1.rotation.y= -Math.PI/2;
+			var edge2_2= createObject(new THREE.PlaneBufferGeometry(robotScale*0.3,9), null, true);
 			edge2_2.position.z= -robotScale*2.05;
 			edge2_2.rotation.y= -Math.PI/2;
 			
@@ -1523,10 +1523,13 @@
 	rooms[2] = createStandardRoom(true,true,2);
 	rooms[3] = createStandardRoom(false,false,3);
 	rooms[4] = createCircleRoom(false,4);
-	rooms[5] = createStandardRoom(false,false,5);
+	rooms[5] = createStandardRoom(false,true,5);
+	rooms[6] = createStandardRoom(false,true,6);
+	rooms[7] = createStandardRoom(false,false,7);
 	
 	//create objects inside rooms
-	var roomsObjects = []
+	var roomsObjects = [rooms.length]
+	roomsObjects.fill(null);
 	roomsObjects[0]=createObjectForRoom1();
 	roomsObjects[1]=createObjectForRoom2();
 	//create the edge
@@ -1729,28 +1732,33 @@
 	
 	function optimization()
 	{
-		/*
+		
 		for(i=0; i<rooms.length; i++)	
 		{
-			scene.remove(roomsObjects[i]);
+			if (roomsObjects[i] != null)
+				scene.remove(roomsObjects[i]);
 			scene.remove(rooms[i]);
 		}
 		
 		if(currentRoom>0)
 		{
-			scene.add(roomsObjects[currentRoom-1]);
+			if (roomsObjects[currentRoom-1] != null)
+				scene.add(roomsObjects[currentRoom-1]);
 			scene.add(rooms[currentRoom-1]);
 		}
 		
-		scene.add(roomsObjects[currentRoom]);
-		scene.add(rooms[currentRoom]);
-		
+		if (roomsObjects[currentRoom] != null)
+			scene.add(roomsObjects[currentRoom]);
+			scene.add(rooms[currentRoom]);
+			
 		if(currentRoom<rooms.length-1)
 		{
-			scene.add(roomsObjects[currentRoom+1]);
+			if (roomsObjects[currentRoom+1] != null)
+				scene.add(roomsObjects[currentRoom+1]);
 			scene.add(rooms[currentRoom+1]);
 		}
-		*/
+		
+		
 	}
 	//***************************************************************************//
 	//*****************************-MAP SCRIPT-**********************************//
