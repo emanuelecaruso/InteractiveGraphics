@@ -110,9 +110,9 @@
 	
 	function createObject(meshgeom,shape,fixed,mass=0, side=false ) {
 		if (!side)
-			var meshMaterial = new THREE.MeshNormalMaterial( );
+			var meshMaterial = new THREE.MeshPhongMaterial( );
 		else
-			var meshMaterial = new THREE.MeshNormalMaterial( {side: THREE.BackSide} );
+			var meshMaterial = new THREE.MeshPhongMaterial( {side: THREE.BackSide} );
 			
 		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
 		mesh.castShadow = true;
