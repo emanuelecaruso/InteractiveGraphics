@@ -1182,6 +1182,13 @@
 		return controlStation;
 	}
 	
+	//CREATE CONTAINER
+	function createContainer()
+	{
+	
+	
+	}
+	
 	//CREATE BOX AT WALL
 	function createBoxAtWall() 
 	{
@@ -1202,6 +1209,19 @@
 		
 		var boxAtWall = mergeLastFixedObjects(3);
 		return boxAtWall;
+	}
+	
+	//CREATE TABLE
+	function createTable() 
+	{
+		var leg = createObject(new THREE.CylinderGeometry(1,1,4,5), new CANNON.Cylinder(1,1,4,5), true);
+		leg.position.y= 2;
+		
+		var box = createObject(new THREE.BoxGeometry(12,1,6), new CANNON.Box(new CANNON.Vec3(6,0.5,3)), true);
+		box.position.y=4.5;
+		
+		var table = mergeLastFixedObjects(2);
+		return table;
 	}
 	
 	
@@ -1350,6 +1370,7 @@
 
 	}
 	
+	var lift;
 	//CREATE A CIRCULAR ROOM
 	function createCircleRoom(column,num)
 	{
@@ -1361,9 +1382,20 @@
 		var roomHeight = 15;
 		
 		//floor circle
-		var floorObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,0.1/2,radius)), true);
+		var floorObject = createObject(new THREE.RingGeometry(radius/2,radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
 		floorObject.rotation.set(-Math.PI/2,0,0);
 		floorObject.position.y=0.05;
+		circleRoom.add(floorObject)
+		
+		lift = createObject(new THREE.CircleGeometry(radius/2,numOfSegments), null);
+		lift.rotation.set(-Math.PI/2,0,0);
+		lift.position.y=0.05;
+		circleRoom.add(lift);
+		
+		var tube = createObject(new THREE.CylinderGeometry(radius/2,radius/2,5,numOfSegments,1,true), null, true,0, true);
+		tube.position.y=-2.45;
+		//scene.add(tube)
+		circleRoom.add(tube);
 		
 		//circular wall
 		var wallPieces = [];
@@ -1376,7 +1408,7 @@
 		}
 		
 		//ceiling
-		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius/2,radius/2,0.1/2)), true);
+		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
 		ceilingObject.rotation.set(Math.PI/2,0,0);
 		ceilingObject.position.y=roomHeight-0.05;
 
@@ -1386,12 +1418,12 @@
 		{
 			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4),  new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)), true);
 			columnObject.position.set(radius-2,roomHeight/2,-39/2+2);
-			var someStructureObjects= mergeLastFixedObjects(29);
+			var someStructureObjects= mergeLastFixedObjects(28);
 		}
 		//wall for door
 		else
 		{
-			var someStructureObjects= mergeLastFixedObjects(28);
+			var someStructureObjects= mergeLastFixedObjects(27);
 			
 			var wallForDoorGroup = createWallForDoor(39,roomHeight);
 			wallForDoorGroup.position.x=radius-2;
@@ -1417,7 +1449,7 @@
 	//-------------------------------------------------------------//
 	
 	//::::::::::::::::::::::ROOM1:::::::::::::::::::::://
-	
+	var pistons = [];
 	function createObjectForRoom1()
 	{
 		var objects = new THREE.Group();
@@ -1457,6 +1489,18 @@
 		var someStructureObjects=mergeLastFixedObjects(10);
 		objects.add(someStructureObjects);
 		
+		for(i=0; i<4; i++)
+		{
+			pistons[i] = createObject(new THREE.CylinderGeometry( 2.5,2.5, 4.5, 6 ), new CANNON.Cylinder(2.5, 2.5, 4.5, 6), true);
+		}
+		
+		pistons[0].position.set(22.2,9.75,-15.7);
+		pistons[1].position.set(26.2,9.75,-15.7);
+		pistons[2].position.set(22.2,9.75,-11.3);
+		pistons[3].position.set(26.2,9.75,-11.3);
+		for(i=0; i<4; i++)
+			objects.add(pistons[i]);
+		
 		var tablet = createTablet();
 		tablet.position.set(25,0,-5);
 		objects.add(tablet);
@@ -1478,7 +1522,7 @@
 		var capsule3 = createCapsule();
 		capsule3.position.set(-24,0,-10);
 		
-		objects.add(capsule1,capsule2,capsule3);
+		objects.add(capsule1,capsule2, capsule3);
 		
 		scene.add(objects);
 		return objects;
@@ -1520,6 +1564,64 @@
 		return objects;
 	}
 	
+	//::::::::::::::::::::::ROOM3:::::::::::::::::::::://
+	
+	var planetHolo;
+	function createObjectForRoom3()
+	{
+		var objects = new THREE.Object3D();
+		
+		planetHolo = createObject(new THREE.SphereGeometry(2, 8, 8),  new CANNON.Sphere(2), false, 10);
+		bodies[bodies.length-1].position.set(150, 7.5, -12.2);
+		planetHolo.position.set(bodies[bodies.length-1].position);
+		bodies[bodies.length-1].angularVelocity.set(0,1,0);
+		bodies[bodies.length-1].angularDamping = 0.0;
+		world.addBody(bodies[bodies.length-1]);
+		scene.add(planetHolo);
+		
+		var columnDown = createObject(new THREE.CylinderGeometry( 4.2, 4.2, 3, 5 ), new CANNON.Cylinder(4.2, 4.2, 3, 5), true);
+		columnDown.position.set(-30, 1.5, -12.2);
+		objects.add(columnDown); 
+		
+		var columnUp = createObject(new THREE.CylinderGeometry( 4.2, 4.2, 3, 5 ), new CANNON.Cylinder(4.2, 4.2, 3, 5), true);
+		columnUp.position.set(-30, 13.5, -12.2);
+		objects.add(columnUp);
+		
+		var controlStation = createControlStation();
+		controlStation.position.set(-20,0,-15);
+		objects.add(controlStation);
+		
+		var table = createTable();
+		table.position.set(-10,0,-12);
+		table.rotation.y=Math.PI/2;
+		objects.add(table);
+		
+		var table1 = createTable();
+		table1.position.set(-7,0,-6);
+		objects.add(table1);
+		
+		var table2 = createTable();
+		table2.position.set(5,0,-6);
+		objects.add(table2);
+		
+		objects.position.x=180;
+		return objects;
+	}
+	
+	//::::::::::::::::::::::ROOM4:::::::::::::::::::::://
+	
+	function createObjectForRoom4()
+	{
+		var objects = new THREE.Object3D();
+		
+		var tablet = createTablet();
+		tablet.position.set(0,0,-5);
+		objects.add(tablet);
+		
+		
+		objects.position.x=240;
+		return objects;
+	}
 	
 	//-------------------------------------------------------------//
 	//-------------------------TUBE-LIGHT--------------------------//
@@ -1565,6 +1667,9 @@
 	var roomsObjects = [rooms.length]
 	roomsObjects[0]=createObjectForRoom1();
 	roomsObjects[1]=createObjectForRoom2();
+	roomsObjects[2]=createObjectForRoom3()
+	roomsObjects[3]=createObjectForRoom4();
+	
 	//create the edge
 	var bound = createObject(new THREE.BoxGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
 	bound.position.set((rooms.length*30)-30,7.5,20);
@@ -1579,16 +1684,21 @@
 			world.addBody(bodies[i]);
 		}
 	
+	var securityCameras = []
 	//create the security camera
 	var securityCamera = createsecurityCamera();	
 	securityCamera.position.set( 30 - 2.2, 13, 0 );
 	scene.add(securityCamera);
 	
-	
-	//---------------------------------------------------------//
-	//-----------------------ANIMATION-------------------------//
-	//---------------------------------------------------------//
-	
+	function pistonsAnimation()
+	{
+		pistons[0].translateY(0.02*Math.sin(worldTime));
+		pistons[1].translateY(0.02*Math.cos(worldTime));
+		pistons[2].translateY(0.02*Math.cos(worldTime+1));
+		pistons[3].translateY(0.02*Math.sin(worldTime+1));
+
+	}
+
 	function doorsAnimation()
 	{
 		
@@ -1641,6 +1751,10 @@
 		
 	}
 	
+	function planetHoloAnimation(){
+	planetHolo.rotateY(0.02);
+	}
+	
 	function securityCameraAnimation()
 	{
 		for(i =0; i<securityCameraForAnimation.length; i++)
@@ -1656,6 +1770,9 @@
 		currentRoom = Math.floor((robot.position.x+30)/60);
 		doorsAnimation();					//animation of doors (including the CAPSULE DOOR)
 		securityCameraAnimation();		//animate the security camera
+		planetHoloAnimation();			//planet hologram animation
+		pistonsAnimation();
+		
 		updatePhysics();					//update the physic
 		director();							//a director which manage the camera
 		optimization();
@@ -1668,7 +1785,7 @@
 		if(keyboard.pressed("F"))
 		{
 			var testMesh = createObject(new THREE.BoxGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
-			bodies[bodies.length-1].position.set(45,7,0);
+			bodies[bodies.length-1].position.set(240,7,0);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
 			bodies[bodies.length-1].velocitydamping = 0.0;
@@ -1707,16 +1824,16 @@
 	{
 		
 		//at the left of 0, activate the left edge trigger
-		if (robot.position.x<0)
+		if (robot.position.x<-5)
 			triggers=1;
 		
 		//if the robot is within the window range, set the damping coefficients and switch director
-		if(robot.position.x>30+60 & robot.position.x<30+60*2 & triggers!=2)
+		if(robot.position.x>35+60 & robot.position.x<25+60*2 & triggers!=2)
 		{
 			dampY=5+dampY;
 			dampZ=15+dampZ;
 			dampLAx=-120+dampLAx+robot.position.x+velocity/2;
-			dampLAz=80+dampLAz;
+			dampLAz=100+dampLAz;
 			triggers=2;
 		}
 		
@@ -1752,19 +1869,19 @@
 				camera.position.x = robot.position.x+velocity/2;				
 				camera.position.y=5+dampY;
 				camera.position.z=5+dampZ;
-				camera.lookAt(120+dampLAx,5,-80+dampLAz);
+				camera.lookAt(120+dampLAx,5,-100+dampLAz);
 				dampY=dampY/1.033;
 				dampZ=dampZ/1.033;
 				dampLAx=dampLAx/1.033;
 				dampLAz=dampLAz/1.033;
 				
 				//when the robot leaves the window range, set the damping coefficients and return to the standard director
-				if(robot.position.x<=30+60 | robot.position.x>=30+60*2)
+				if(robot.position.x<=35+60 | robot.position.x>=25+60*2)
 				{
 					dampY=camera.position.y-10;
 					dampZ=camera.position.z-20;
 					dampLAx=120+dampLAx-(robot.position.x+velocity/2);
-					dampLAz=-80+dampLAz;
+					dampLAz=-100+dampLAz;
 					camera.lookAt(robot.position.x+velocity/2+dampLAx,5,0+dampLAz);
 					camera.position.x = robot.position.x+velocity/2;				
 					camera.position.y=10+dampY;
