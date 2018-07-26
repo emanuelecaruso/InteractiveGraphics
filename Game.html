@@ -1448,9 +1448,9 @@
 	//-------------------CREATE-ROOMS-OBJECTS----------------------//
 	//-------------------------------------------------------------//
 	
-	//::::::::::::::::::::::ROOM1:::::::::::::::::::::://
+	//::::::::::::::::::::::ROOM0:::::::::::::::::::::://
 	var pistons = [];
-	function createObjectForRoom1()
+	function createObjectForRoom0()
 	{
 		var objects = new THREE.Group();
 		
@@ -1529,9 +1529,9 @@
 	}
 	
 	
-	//::::::::::::::::::::::ROOM2:::::::::::::::::::::://
+	//::::::::::::::::::::::ROOM1:::::::::::::::::::::://
 	
-	function createObjectForRoom2()
+	function createObjectForRoom1()
 	{
 		var objects = new THREE.Group();
 		
@@ -1665,10 +1665,10 @@
 	
 	//create objects inside rooms
 	var roomsObjects = [rooms.length]
-	roomsObjects[0]=createObjectForRoom1();
-	roomsObjects[1]=createObjectForRoom2();
-	roomsObjects[2]=createObjectForRoom3()
-	roomsObjects[3]=createObjectForRoom4();
+	roomsObjects[0]=createObjectForRoom0();
+	roomsObjects[1]=createObjectForRoom1();
+	roomsObjects[3]=createObjectForRoom3()
+	roomsObjects[4]=createObjectForRoom4();
 	
 	//create the edge
 	var bound = createObject(new THREE.BoxGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
