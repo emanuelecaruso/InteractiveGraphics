@@ -112,12 +112,12 @@
 
 
 
-//----------------------------------------GUI + DOWNSCALE-----------------------------------//
+//----------------------------------------GUI-----------------------------------//
 
 
 var options = {
   Res_Down: res_scale,
-  shadows: false,
+  shadows: true,
   low_power: false,
   high_power: false,
   precision: false,
@@ -1161,9 +1161,9 @@ loop();
 		//security camera (without substain)
 		var securityCameraGroup = new THREE.Group();
 		
-		var boxObject = createObject(new THREE.BoxGeometry(boxLength,boxDepth,boxDepth), new CANNON.Box(new CANNON.Vec3(boxLength/2,boxDepth/2,boxDepth/2)), true);
+		var boxObject = createObject(new THREE.BoxBufferGeometry(boxLength,boxDepth,boxDepth), new CANNON.Box(new CANNON.Vec3(boxLength/2,boxDepth/2,boxDepth/2)), true);
 		
-		var eyeObject = createObject(new THREE.CylinderGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8),  new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,boxLength/3,8), true );
+		var eyeObject = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.4,boxDepth*0.4,boxLength/3,8),  new CANNON.Cylinder(boxDepth*0.4,boxDepth*0.4,boxLength/3,8), true );
 		eyeObject.rotation.z=Math.PI/2;
 		eyeObject.position.x=-boxLength/2;
 		
@@ -1175,9 +1175,9 @@ loop();
 		//substain for security camera
 		var substainForsecurityCamera = new THREE.Group();
 		
-		var stick1Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3), true  );
+		var stick1Object = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*0.8,3), true  );
 		
-		var stick2Object = createObject(new THREE.CylinderGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3), true );
+		var stick2Object = createObject(new THREE.CylinderBufferGeometry(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3),  new CANNON.Cylinder(boxDepth*0.2,boxDepth*0.2,boxLength*1.5,3), true );
 		stick2Object.position.set(boxLength/2,+boxLength/10,0);
 		stick2Object.rotation.z=-Math.PI/4;
 		
@@ -1338,7 +1338,7 @@ loop();
 	{
 		var capsule = new THREE.Group();
 		
-		var top1 = createObject(new THREE.TorusGeometry(robotScale*2.3,robotScale*0.2,5,18),null, true);
+		var top1 = createObject(new THREE.TorusBufferGeometry(robotScale*2.3,robotScale*0.2,5,18),null, true);
 		top1.position.set(-0.1, 9, 0);
 		top1.rotation.x=Math.PI/2;
 		
@@ -1365,17 +1365,17 @@ loop();
 		
 		if(root)
 		{
-			var halfCylinder1Back= createObject(new THREE.CylinderGeometry(robotScale*2.2,robotScale*2.2,9,18,1,true,Math.PI,Math.PI), null, true,0,true);
+			var halfCylinder1Back= createObject(new THREE.CylinderBufferGeometry(robotScale*2.2,robotScale*2.2,9,18,1,true,Math.PI,Math.PI), null, true,0,true);
 			halfCylinder1Back.position.y=4.5;
 			
-			var edge2_1= createObject(new THREE.PlaneGeometry(robotScale*0.3,9), null, true);
+			var edge2_1= createObject(new THREE.PlaneBufferGeometry(robotScale*0.3,9), null, true);
 			edge2_1.position.z= robotScale*2.05;
 			edge2_1.rotation.y= -Math.PI/2;
-			var edge2_2= createObject(new THREE.PlaneGeometry(robotScale*0.3,9), null, true);
+			var edge2_2= createObject(new THREE.PlaneBufferGeometry(robotScale*0.3,9), null, true);
 			edge2_2.position.z= -robotScale*2.05;
 			edge2_2.rotation.y= -Math.PI/2;
 			
-			var halfCylinder2Back= createObject(new THREE.CylinderGeometry(robotScale*1.9,robotScale*1.9,9,18,1,true,0,Math.PI), null, true,0,true);
+			var halfCylinder2Back= createObject(new THREE.CylinderBufferGeometry(robotScale*1.9,robotScale*1.9,9,18,1,true,0,Math.PI), null, true,0,true);
 			//halfCylinder2Back.position.set(-0.1,4.5,0);
 			
 			halfCylinder2.add(halfCylinder2Back);
@@ -1822,7 +1822,7 @@ loop();
 	roomsObjects[4]=createObjectForRoom4();
 	
 	//create the edge
-	var bound = createObject(new THREE.BoxGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
+	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)), true );
 	bound.position.set((rooms.length*30)-30,7.5,20);
 	//bound.rotateZ(-Math.PI/2);
 	scene.add(bound);
@@ -1939,7 +1939,7 @@ loop();
 		//test for physic boxes
 		if(keyboard.pressed("F"))
 		{
-			var testMesh = createObject(new THREE.BoxGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
+			var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
 			bodies[bodies.length-1].position.set(240,7,0);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
@@ -1952,7 +1952,7 @@ loop();
 		if(keyboard.pressed("R") & flagTest)
 		{
 			flagTest= false;
-			var testMesh = createObject(new THREE.BoxGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
+			var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), false, 10 );
 			bodies[bodies.length-1].position.set(41,8,0);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(0,0,-5);
