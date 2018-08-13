@@ -14,10 +14,15 @@ P3) Utilizzare LambertMaterial sostituendolo a PhongMaterial
 
 
 
+Rev IG_Edo 2.1
+
+- Sistemata la parte audio
+- Aggiunta texture Terra
+
+
+
 
 Rev. IG_Edo 2.0
-
-DONE:
 
 - Aggiornato threejs a r95
 - Aggiornati i nomi delle librerie
