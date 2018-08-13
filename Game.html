@@ -4,12 +4,14 @@
 
 <head>
     <title>Game</title>
-    <script type="text/javascript" src="./build/three.js"></script>
+    <script type="text/javascript" src="./build/three_R94.js"></script>
     <script type="text/javascript" src="./build/SceneUtils.js"></script>
     <script type="text/javascript" src="./build/stats.min.js"></script>
     <script type="text/javascript" src="./libs/cannon.js"></script>
 	<script type="text/javascript" src="./libs/KeyboardState.js"></script>
     <script type="text/javascript" src="./libs/dat.gui.min.js"></script>
+    <!-- <script type="text/javascript" src="./libs/Detector.js"></script> -->
+
 	
     <style>
         body {
@@ -19,6 +21,7 @@
         }
     </style>
     <meta name='viewport' content='width=device-width'/>
+    <meta charset="UTF-8">
 </head>
 <body>
 
@@ -84,7 +87,7 @@
 	var scene = new THREE.Scene();
 
 	// create a camera, which defines where we're looking at.
-	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 100);
+	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
 
 	
 	
@@ -98,13 +101,13 @@
 	var webGLRenderer = new THREE.WebGLRenderer();
 	//webGLRenderer.powerPreference= "low-power";
 	//webGLRenderer.precision = "lowp";
-	webGLRenderer.setClearColor(new THREE.Color(0xffffff));
+	webGLRenderer.setClearColor(new THREE.Color(0x000000));
 	webGLRenderer.setSize(window.innerWidth/ res_scale , window.innerHeight/ res_scale );
 	document.body.appendChild( webGLRenderer.domElement );
 	webGLRenderer.domElement.style.width = webGLRenderer.domElement.width * res_scale + 'px';
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
 	webGLRenderer.shadowMap.enabled = true;
-	webGLRenderer.shadowMap.type = THREE.BasicShadowMap;
+	/*webGLRenderer.shadowMap.type = THREE.BasicShadowMap;*/
 	
 	console.log(webGLRenderer);
 	
@@ -160,17 +163,21 @@ function loop(){
 
 	if (low_power==true) webGLRenderer.powerPreference= "low-power";
 		else if (high_power ==true) webGLRenderer.powerPreference= "high-performance";
-			else webGLRenderer.powerPreference= "default";
+			/*else webGLRenderer.powerPreference= "default";*/
 
 	if (lowprecision) webGLRenderer.precision = "lowp";
-		else webGLRenderer.precision = "highp";
+		/*else webGLRenderer.precision = "highp";*/
 
 	if (BasicShadowMap) webGLRenderer.shadowMap.type = THREE.BasicShadowMap;
 		else webGLRenderer.shadowMap.type = THREE.PCFShadowMap
 
-	if(keyboard.pressed("H")) {console.log(webGLRenderer); console.log(webGLRenderer.info.memory);	console.log(webGLRenderer.info.render); webGL_Gui.open();}
+	if(keyboard.pressed("H")) {console.log(webGLRenderer); console.log(webGLRenderer.info.memory);	console.log(webGLRenderer.info.render); webGL_Gui.open(); console.log(intersects); }
 
-	//webGLRenderer.shadowMap.enabled = true;
+     //if (options.shadows) webGLRenderer.shadowMap.enabled = true;
+	
+	
+
+	
 
 }
 
@@ -316,11 +323,50 @@ loop();
 		
 	}
 
-	
-
-		
-
 	initCannon();
+
+
+
+	                        //---EDO WORK IN PROGRESS---//
+//---------------------------------MOUSE INTERACTION--------------------------------------------//
+
+/*var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
+function onMouseMove( event ) {
+
+	// calculate mouse position in normalized device coordinates
+	// (-1 to +1) for both components
+
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+}
+
+function render() {
+	window.requestAnimationFrame(render);
+
+	// update the picking ray with the camera and mouse position
+	raycaster.setFromCamera( mouse, camera );
+
+	// calculate objects intersecting the picking ray
+	var intersects = raycaster.intersectObjects( scene.children );
+	//console.log(intersects);
+
+	for ( var i = 0; i < intersects.length; i++ ) {
+
+		intersects[ i ].object.material.color.set( 0xff0000 );
+
+	}
+
+	webGLRenderer.render( scene, camera );
+
+}
+
+window.addEventListener( 'mousemove', onMouseMove, false );
+
+render();*/
+
 	
 </script>
 	
@@ -1020,7 +1066,7 @@ loop();
 	//------------------------BACKGROUND---------------------------//
 	//-------------------------------------------------------------//
 
-	window.addEventListener( 'resize', onWindowResize, false );
+/*	window.addEventListener( 'resize', onWindowResize, false );
 
 
 	//SETTING THE BACKGROUND THEME (WITH TEXTURE)
@@ -1067,8 +1113,62 @@ loop();
 	function init() {
 		animate();
 	}; 
-	
+	*/
 		
+
+	/*var varbackgroundMesh = new THREE.Mesh(
+	    	new THREE.PlaneBufferGeometry(1,1,1),
+			new THREE.MeshBasicMaterial({
+	    		map: texture,
+			}));
+
+	var manager = new THREE.LoadingManager();
+	//manager.onLoad = init;
+
+	var loader = new THREE.TextureLoader( manager );
+
+	loader.crossOrigin = '';
+ 
+	loader.load( 'https://upload.wikimedia.org/wikipedia/commons/3/3a/ISS-45_Italy_night_view_%282%29.jpg', function( texture ) {
+		backgroundMesh;
+		
+			
+	    
+	});*/
+
+var loader = new THREE.TextureLoader();
+loader.crossOrigin = '';
+loader.crossOrigin = 'Access-Control-Allow-Origin' ;
+THREE.ImageUtils.crossOrigin = '';
+
+var texture = loader.load( "textures/Earth.png" );
+//var texture = THREE.ImageUtils.loadTexture('http://www.transparentpng.com/download/space/space-planet-png-3.png');
+texture.wrapS = THREE.RepeatWrapping;
+texture.wrapT = THREE.RepeatWrapping;
+
+var backgroundMesh = new THREE.Mesh(
+	    	/*new THREE.PlaneBufferGeometry(160*1.5,106*1.5,1),*/
+	    	new THREE.SphereBufferGeometry(30, 30, 30),
+			new THREE.MeshBasicMaterial({
+	    		map: texture,
+			}));
+
+
+backgroundMesh.position.set(120,5,-100);
+backgroundMesh.rotateY(-Math.PI/2);
+//backgroundMesh.material.depthTest = false;
+//backgroundMesh.material.depthWrite = false;
+scene.add(backgroundMesh);
+
+
+/*var PlaneBufferGeometry1 = new THREE.PlaneBufferGeometry(2,2,1);
+var MeshBasicMaterial1 = new THREE.MeshBasicMaterial();
+var Mesh1 = new THREE.Mesh(PlaneBufferGeometry1, MeshBasicMaterial1);
+scene.add(Mesh1);
+Mesh1.position.set(1,1,1);
+PlaneBufferGeometry1.width = 5;
+Mesh1.position.set(3,3,3);
+*/
 	
 	//-------------------------------------------------------------//
 	//----------------------CREATE-OBJECTS-------------------------//
@@ -1776,7 +1876,7 @@ loop();
 	//--------------------------------------------------------------//
 	//--------------------------AUDIO ROOM--------------------------//
 	//--------------------------------------------------------------//
-
+	//webGLRenderer.autoClear = false;
 	var listener = new THREE.AudioListener();
 	camera.add( listener );
 
@@ -1792,10 +1892,9 @@ loop();
 	{
 		if (sound.isPlaying == false){audioLoader.load( 'sounds/door2.ogg', function( buffer ) {
 			sound.setBuffer( buffer );
-			sound.setVolume (1);
+			sound.setVolume (0.9);
 			sound.play();  });}
 	}
-
 
 
 	//--------------------------------------------------------------//
@@ -2092,7 +2191,6 @@ loop();
 	//***************************************************************************//
 </script>
 	
-
 	
 <script type="text/javascript">
 //SCRIPT PER IL RENDERING
