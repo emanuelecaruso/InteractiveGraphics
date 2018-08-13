@@ -1148,13 +1148,13 @@ texture.wrapT = THREE.RepeatWrapping;
 
 var backgroundMesh = new THREE.Mesh(
 	    	/*new THREE.PlaneBufferGeometry(160*1.5,106*1.5,1),*/
-	    	new THREE.SphereBufferGeometry(30, 30, 30),
+	    	new THREE.SphereBufferGeometry(50, 30, 30),
 			new THREE.MeshBasicMaterial({
 	    		map: texture,
 			}));
 
 
-backgroundMesh.position.set(120,5,-100);
+backgroundMesh.position.set(120,5,-180);
 backgroundMesh.rotateY(-Math.PI/2);
 //backgroundMesh.material.depthTest = false;
 //backgroundMesh.material.depthWrite = false;
@@ -1965,8 +1965,10 @@ Mesh1.position.set(3,3,3);
 				}
 			}
 			else
-				if(doorsArray[currentRoom].position.z<=0)
+				if(doorsArray[currentRoom].position.z<0)
 				{
+					if (sound.isPlaying == false){AudioDoorPlay();
+					sound.isPlaying = true;}
 					doorsArray[currentRoom].translateZ(0.5);
 				}
 		}
@@ -1981,8 +1983,10 @@ Mesh1.position.set(3,3,3);
 				}
 			}
 			else
-				if(doorsArray[currentRoom-1].position.z<=0)
+				if(doorsArray[currentRoom-1].position.z<0)
 				{
+					if (sound.isPlaying == false){AudioDoorPlay();
+					sound.isPlaying = true;}
 					doorsArray[currentRoom-1].translateZ(0.5);
 				}
 		
