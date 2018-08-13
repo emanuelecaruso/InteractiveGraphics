@@ -2030,7 +2030,7 @@ Mesh1.position.set(3,3,3);
 		securityCameraAnimation();		//animate the security camera
 		planetHoloAnimation();			//planet hologram animation
 		pistonsAnimation();
-		
+		backgroundMesh.position.x=robot.position.x;
 		updatePhysics();					//update the physic
 		director();							//a director which manage the camera
 		optimization();
