@@ -2236,17 +2236,18 @@ Mesh1.position.set(3,3,3);
 
 	// create the PositionalAudio object (passing in the listener)
 	var sound = new THREE.Audio( listener);
-	sound.playbackRate = 6;
+	
 	
 	// load a sound and set it as the PositionalAudio object's buffer
 	var audioLoader = new THREE.AudioLoader();
 	
 	//function to play door open
-	function AudioDoorPlay ()
+	function AudioDoorPlay (playbackRate)
 	{
 		if (sound.isPlaying == false){audioLoader.load( 'sounds/door2.ogg', function( buffer ) {
 			sound.setBuffer( buffer );
 			sound.setVolume (0.9);
+			sound.playbackRate = playbackRate;
 			sound.play();  });}
 	}
 
@@ -2345,14 +2346,14 @@ function backgroundMusic(){
 				if(doorsArray[currentRoom].position.z>-7)
 				{
 					doorsArray[currentRoom].translateZ(-0.5);
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 				}
 			}
 			else
 				if(doorsArray[currentRoom].position.z<0)
 				{
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 					doorsArray[currentRoom].translateZ(0.5);
 				}
@@ -2363,14 +2364,14 @@ function backgroundMusic(){
 				if(doorsArray[currentRoom-1].position.z>-7)
 				{
 					doorsArray[currentRoom-1].translateZ(-0.5);
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 				}
 			}
 			else
 				if(doorsArray[currentRoom-1].position.z<0)
 				{
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 					doorsArray[currentRoom-1].translateZ(0.5);
 				}
@@ -2383,7 +2384,7 @@ function backgroundMusic(){
 			{
 				doorCapsule.rotateY(0.07);
 				firstMove();
-				
+				if (sound.isPlaying == false){ sound.playbackRate= 2; AudioDoorPlay(2); sound.isPlaying = true;}
 				
 			}
 		}
