@@ -183,13 +183,12 @@ console.log(webGLRenderer);
 
 
 // CREATE "PLAY" 2D TEXT
-function createLabel(text, x, y, z, size, color) {
+function createLabel(text, x, y, z, size, color, planeX, planeY) {
 
 	var canvas = document.createElement("canvas");
 	webGLRenderer.canvas = canvas;
-	
-	var PlaneText = new THREE.PlaneGeometry(3, 2, 10, 10);
-	PlaneText.visible=false;
+		
+	var PlaneText = new THREE.PlaneGeometry(planeX, planeY, 10, 10);
 	
 	var context = canvas.getContext("2d");
 	context.width =5;
@@ -214,15 +213,27 @@ function createLabel(text, x, y, z, size, color) {
 	
 	mesh.position.x = x;
 	mesh.position.y = y;
-	mesh.rotation.y = Math.PI/2;
-
+	mesh.position.z = z;
+					
 	return mesh;
 }
 
-
-mesh = createLabel("PLAY", -20, 7, 0, 60, "black");
+		
+//Add Text to the scene
+mesh = createLabel("PLAY", -20, 7, 0, 60, "lightblue", 3, 2);
+mesh.rotation.y = Math.PI/2;
 scene.add(mesh);
 
+
+/*mesh2 = createLabel("Press 1 to be LEZZO", 0, 0.15, 5, 20, "white", 20, 10);
+mesh2.rotation.y = 0;
+mesh2.rotation.x = -Math.PI/2 ;
+scene.add(mesh2);*/
+
+mesh3 = createLabel("Press E", 23, 8, -5.5, 20, "white", 20, 10);
+mesh3.rotation.y = 0;
+mesh3.rotation.x = 0 ;
+scene.add(mesh3);
 
 
 
