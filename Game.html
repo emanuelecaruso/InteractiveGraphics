@@ -10,6 +10,7 @@
     <script type="text/javascript" src="./libs/cannon.js"></script>
 	<script type="text/javascript" src="./libs/KeyboardState.js"></script>
     <script type="text/javascript" src="./libs/dat.gui.min.js"></script>
+    <script type="text/javascript" src="libs/Projector.js"></script>
     <!-- <script type="text/javascript" src="./libs/Detector.js"></script> -->
 
 	
@@ -90,7 +91,9 @@
 	var camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
 
 	
-	
+	camera.position.x = 0;
+	camera.position.y = -40;
+	camera.position.z = 20;
 
 	var res_scale = 1;
 
@@ -103,12 +106,15 @@
 	//webGLRenderer.precision = "lowp";
 	webGLRenderer.setClearColor(new THREE.Color(0x000000));
 	webGLRenderer.setSize(window.innerWidth/ res_scale , window.innerHeight/ res_scale );
-	document.body.appendChild( webGLRenderer.domElement );
+	
+	webGLRenderer.setPixelRatio( window.devicePixelRatio );
 	webGLRenderer.domElement.style.width = webGLRenderer.domElement.width * res_scale + 'px';
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
+
 	webGLRenderer.shadowMap.enabled = false;
-	/*webGLRenderer.shadowMap.type = THREE.BasicShadowMap;*/
+	webGLRenderer.shadowMap.type = THREE.BasicShadowMap;
 	
+	document.body.appendChild( webGLRenderer.domElement );
 	console.log(webGLRenderer);
 	
 	
@@ -122,10 +128,7 @@
 var options = {
   Res_Down: res_scale,
   shadows: true,
-  low_power: false,
-  high_power: false,
-  precision: false,
-  BasicShadowMap: true
+  BasicShadowMap: false,
   };
 
 
@@ -134,13 +137,9 @@ var gui = new dat.GUI();
 var webGL_Gui = gui.addFolder('Renderer');
 
 webGL_Gui.add(options, 'Res_Down', 1, 3).listen();
-webGL_Gui.add(options, 'low_power' ).listen();
-webGL_Gui.add(options, 'high_power').listen();
 webGL_Gui.add(webGLRenderer.shadowMap, 'enabled').name('shadows').listen();
-webGL_Gui.add(options, 'precision').name('low precision shader');
 webGL_Gui.add(options, 'BasicShadowMap').listen();
 webGL_Gui.open();
-
 
 
 var keyboard = new THREEx.KeyboardState();
@@ -150,41 +149,185 @@ function loop(){
 	requestAnimationFrame(loop);
 	
 	res_scale = options.Res_Down;
-	var low_power = options.low_power;
-	var high_power = options.high_power;
-	var lowprecision = options.precision;
 	var BasicShadowMap = options.BasicShadowMap;
 
-
+	// DownScale
 	camera.aspect = window.innerWidth / window.innerHeight;
 	camera.updateProjectionMatrix();
 	webGLRenderer.setSize( window.innerWidth/res_scale, window.innerHeight/res_scale );
 	webGLRenderer.domElement.style.width = webGLRenderer.domElement.width * res_scale + 'px';
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
 
-	if (low_power==true) webGLRenderer.powerPreference= "low-power";
-		else if (high_power ==true) webGLRenderer.powerPreference= "high-performance";
-			/*else webGLRenderer.powerPreference= "default";*/
-
-	if (lowprecision) webGLRenderer.precision = "lowp";
-		/*else webGLRenderer.precision = "highp";*/
-
+	
 	if (BasicShadowMap) webGLRenderer.shadowMap.type = THREE.BasicShadowMap;
-		else webGLRenderer.shadowMap.type = THREE.PCFShadowMap
-
-	if(keyboard.pressed("H")) {console.log(webGLRenderer); console.log(webGLRenderer.info.memory);	console.log(webGLRenderer.info.render); webGL_Gui.open(); console.log(intersects); }
-
-     //if (options.shadows) webGLRenderer.shadowMap.enabled = true;
+		else webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	
-	
-
-	
-
+	// H per il debug
+	if(keyboard.pressed("H")) {console.log(webGLRenderer); console.log(webGLRenderer.info.memory);	console.log(webGLRenderer.info.render); webGL_Gui.open(); console.log(intersects); }   
 }
 
 loop();
 
-//----------------------------------------------------------------------------------------//
+
+//--------------------INTRO----------------------//
+var intro = true;
+var doorOpen = false;
+
+camera.position.x = -15;				
+camera.position.y = 7;
+camera.position.z = 0;
+camera.lookAt(-20, 6, 0);
+
+
+console.log(webGLRenderer);
+
+
+// CREATE "PLAY" 2D TEXT
+function createLabel(text, x, y, z, size, color, planeX, planeY) {
+
+	var canvas = document.createElement("canvas");
+	webGLRenderer.canvas = canvas;
+		
+	var PlaneText = new THREE.PlaneGeometry(planeX, planeY, 10, 10);
+	
+	var context = canvas.getContext("2d");
+	context.width =5;
+	context.height = 3;
+	context.font = size + "pt Arial";
+	
+	var textWidth = context.measureText(text).width;
+
+	context.textAlign = "center";
+	
+	context.fillStyle = "lightblue";
+	context.fillText(text, canvas.width/2 , canvas.height /2 +size/2);
+
+	var texture = new THREE.Texture(canvas);
+	texture.needsUpdate = true;
+	var material = new THREE.MeshBasicMaterial({
+		map : texture
+	});
+	material.transparent = true;
+	var mesh = new THREE.Mesh(PlaneText, material);
+	mesh.overdraw = true;
+	
+	mesh.position.x = x;
+	mesh.position.y = y;
+	mesh.position.z = z;
+					
+	return mesh;
+}
+
+		
+//Add Text to the scene
+mesh = createLabel("PLAY", -20, 7, 0, 60, "lightblue", 3, 2);
+mesh.rotation.y = Math.PI/2;
+scene.add(mesh);
+
+
+/*mesh2 = createLabel("Press 1 to be LEZZO", 0, 0.15, 5, 20, "white", 20, 10);
+mesh2.rotation.y = 0;
+mesh2.rotation.x = -Math.PI/2 ;
+scene.add(mesh2);*/
+
+mesh3 = createLabel("Press E", 23, 8, -5.5, 20, "white", 20, 10);
+mesh3.rotation.y = 0;
+mesh3.rotation.x = 0 ;
+scene.add(mesh3);
+
+
+
+//-----------------------------INTERSECTIONS-------------------------//
+
+// when the mouse moves, call the given function
+document.addEventListener( 'mousedown', onDocumentMouseDown, false );
+
+var projector,mouse = { x: 0, y: 0 };
+projector = new THREE.Projector();
+var targetList = [];
+function onDocumentMouseDown( event ) {
+
+	// the following line would stop any other event handler from firing
+	// (such as the mouse's TrackballControls)
+	// event.preventDefault();
+	
+	console.log("Click.");
+	
+	// update the mouse variable
+	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+		
+
+	// create a Ray with origin at the mouse position
+	//   and direction into the scene (camera direction)
+	var vector = new THREE.Vector3( mouse.x, mouse.y, 1 );
+	
+	vector.unproject(camera);
+	var ray = new THREE.Raycaster( camera.position, vector.sub( camera.position ).normalize() );
+
+	// create an array containing all objects in the scene with which the ray intersects
+	var intersects = ray.intersectObjects( scene.children );
+	
+
+	if (intro ==true){
+	for ( var i = 0; i < intersects.length; i++ ) {
+
+		intersects[ i ].object.material.color.set( 0xfff000 );
+		if (intro==true) cameraIntroMove();
+		cancelAnimationFrame(cameraIntroMove);
+		scene.remove(mesh);
+		backgroundMusic();
+		doorOpen = true;
+		}
+	}
+
+}
+
+
+
+//---------------------------------INTRO CAMERA MOVE-------------------------------//
+
+var lookatVector = new THREE.Vector3( -20, 6, 0);
+
+function cameraIntroMove(){
+
+var a = 0.7;
+
+if (camera.position.x < 0) camera.position.x = camera.position.x + 0.12 * a;
+if (camera.position.y < 10) camera.position.y = camera.position.y + 0.03 * a;
+if (camera.position.z < 20) camera.position.z = camera.position.z + 0.16 * a;
+
+
+
+if (lookatVector.x < 0) lookatVector.x = lookatVector.x + 0.16 * a;
+if (lookatVector.y < 5) lookatVector.y = lookatVector.y + 0.015 * a;
+
+
+camera.lookAt(lookatVector);
+
+
+if (camera.position.x < 0 || camera.position.y < 10 || camera.position.z < 20 /*|| lookatVector.x < 0 || lookatVector.y < 5*/) requestAnimationFrame(cameraIntroMove);
+	else if (camera.position.x >= 0 &&  camera.position.y >= 10 && camera.position.z >= 20) intro = false;
+	else window.cancelAnimationFrame(cameraIntroMove);
+
+}
+
+window.cancelAnimationFrame(cameraIntroMove);
+
+function firstMove(){
+
+	if (robot.position.x<-3){
+		requestAnimationFrame(firstMove);
+		velocity += 0.01;
+		velocityDir = 1; }
+
+}
+
+
+
+
+
+//---------------------------------------STATS-------------------------------------------//
 
 
 
@@ -208,10 +351,10 @@ loop();
 	requestAnimationFrame( animateMonitor );
 	
 	// position and point the camera to the center of the scene
-	camera.position.x = 0;
+	/*camera.position.x = 0;
 	camera.position.y = 10;
 	camera.position.z = 20;
-	camera.lookAt(new THREE.Vector3(0, 5, 0));
+	camera.lookAt(new THREE.Vector3(0, 5, 0));*/
 	
 	// add the output of the renderer to the html element
 	document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
@@ -398,7 +541,8 @@ render();*/
 	
 	// create meshes
 	var robot = new THREE.Group();
-	robot.position.set(0,robotScale,0);
+	//robot.position.set(0, robotScale,0);
+	robot.position.set(-25,robotScale,0);
 	
 	var rotator = new THREE.Object3D();
 	var sphereObject = createObject(new THREE.SphereBufferGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale), true);
@@ -2050,8 +2194,8 @@ Mesh1.position.set(3,3,3);
 	function roomLight(num)
 	{
 		var tubeGeometry = new THREE.CylinderBufferGeometry( 0.2, 0.2, 30 );
-		tubeLight = new THREE.PointLight( 0x6699ff, 1, 40, 0.9 );
-		tubeMat = new THREE.MeshStandardMaterial( {
+		tubeLight = new THREE.PointLight( 0x6699ff, 0.7, 40, 0.9 );
+		tubeMat = new THREE.MeshLambertMaterial( {
 		emissive: 0x6699ff,
 		emissiveIntensity: 1,
 		color: 0xffffff
@@ -2059,9 +2203,12 @@ Mesh1.position.set(3,3,3);
 
 	tubeLight.add( new THREE.Mesh( tubeGeometry, tubeMat ) );
 	tubeLight.position.set( 60*(num), 15, 0 );
-	tubeLight.castShadow = true;
-
 	tubeLight.rotateZ (Math.PI/2);
+
+	tubeLight.castShadow = true;
+	tubeLight.shadow.mapSize.width = 1024;
+	tubeLight.shadow.mapSize.height = 1024;
+
 	scene.add( tubeLight );
 
 	}
@@ -2085,28 +2232,66 @@ Mesh1.position.set(3,3,3);
 
 	}
 
+
+
 	//--------------------------------------------------------------//
 	//--------------------------AUDIO ROOM--------------------------//
 	//--------------------------------------------------------------//
-	//webGLRenderer.autoClear = false;
+	
+
+
+
+//--------------------------DOOR AUDIO--------------------------//
 	var listener = new THREE.AudioListener();
-	camera.add( listener );
+	robot.add( listener );
 
 	// create the PositionalAudio object (passing in the listener)
 	var sound = new THREE.Audio( listener);
-	sound.playbackRate = 6;
+	
 	
 	// load a sound and set it as the PositionalAudio object's buffer
 	var audioLoader = new THREE.AudioLoader();
 	
 	//function to play door open
-	function AudioDoorPlay ()
+	function AudioDoorPlay (playbackRate)
 	{
 		if (sound.isPlaying == false){audioLoader.load( 'sounds/door2.ogg', function( buffer ) {
 			sound.setBuffer( buffer );
 			sound.setVolume (0.9);
+			sound.playbackRate = playbackRate;
 			sound.play();  });}
 	}
+
+
+
+//---------------------------STARSHIP AUDIO----------------------------//
+
+
+// create a global audio source
+var starshipSound = new THREE.Audio( listener );
+
+// load a sound and set it as the Audio object's buffer
+var audioLoaderStarship = new THREE.AudioLoader();
+	audioLoaderStarship.load( 'sounds/starship2.ogg', function( buffer ) {
+	starshipSound.setBuffer( buffer );
+	starshipSound.setLoop( true );
+	starshipSound.setVolume( 0.05 );
+	starshipSound.play();
+});
+
+function backgroundMusic(){
+
+	var backgroundMusic = new THREE.Audio(listener);
+	var audioLoaderBack = new THREE.AudioLoader();
+	audioLoaderBack.load( 'sounds/A Lonely Orbit2.ogg', function( buffer ) {
+	backgroundMusic.setBuffer( buffer );
+	backgroundMusic.setLoop( true );
+	backgroundMusic.setVolume( 1.5 );
+	backgroundMusic.play();
+});
+
+
+}
 
 
 	//--------------------------------------------------------------//
@@ -2172,14 +2357,14 @@ Mesh1.position.set(3,3,3);
 				if(doorsArray[currentRoom].position.z>-7)
 				{
 					doorsArray[currentRoom].translateZ(-0.5);
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 				}
 			}
 			else
 				if(doorsArray[currentRoom].position.z<0)
 				{
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 					doorsArray[currentRoom].translateZ(0.5);
 				}
@@ -2190,32 +2375,36 @@ Mesh1.position.set(3,3,3);
 				if(doorsArray[currentRoom-1].position.z>-7)
 				{
 					doorsArray[currentRoom-1].translateZ(-0.5);
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 				}
 			}
 			else
 				if(doorsArray[currentRoom-1].position.z<0)
 				{
-					if (sound.isPlaying == false){AudioDoorPlay();
+					if (sound.isPlaying == false){AudioDoorPlay(6);
 					sound.isPlaying = true;}
 					doorsArray[currentRoom-1].translateZ(0.5);
 				}
 		
 		//doorCapsule animation
-		if(robot.position.x<-9)
+		if(robot.position.x<-9 && doorOpen)
 		
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
 				doorCapsule.rotateY(0.07);
+				firstMove();
+				if (sound.isPlaying == false){ sound.playbackRate= 2; AudioDoorPlay(2); sound.isPlaying = true;}
+				
 			}
 		}
-		else if(robot.position.x>-9)
+		else if(robot.position.x>-9 && doorOpen)
 		{
-			if(doorCapsule.rotation.y<=0)
+			if(doorCapsule.rotation.y<=0 )
 			{
 				doorCapsule.rotateY(0.07);
+				
 			}
 		}
 		
@@ -2244,7 +2433,7 @@ Mesh1.position.set(3,3,3);
 		pistonsAnimation();
 		backgroundMesh.position.x=robot.position.x;
 		updatePhysics();					//update the physic
-		director();							//a director which manage the camera
+		if (!intro) director();				//a director which manage the camera
 		optimization();
 		
 		//test for gravity
@@ -2325,7 +2514,7 @@ Mesh1.position.set(3,3,3);
 		}
 		
 		//switching between different directors
-		switch (triggers)
+		if (!intro) {switch (triggers)
 		{
 				
 			// 0 for standard director
@@ -2387,6 +2576,7 @@ Mesh1.position.set(3,3,3);
 				break
 				
 		}
+	}
 	}
 	
 	for(i=0; i<rooms.length; i++)	

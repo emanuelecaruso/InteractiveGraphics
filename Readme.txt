@@ -14,21 +14,29 @@ P3) Utilizzare LambertMaterial sostituendolo a PhongMaterial
 
 
 
-Rev IG_Edo 2.1
+Rev IG 2.3
+
+- Aggiunta Intro
+- Aggiunti rumore + musica di sottofondo
+
+
+Rev IG 2.2
+
+- Aggiunta opacità oggetti
+- Aggiunta interazione con tablet
+
+
+Rev IG 2.1 
 
 - Sistemata la parte audio
 - Aggiunta texture Terra
 
 
-
-
-Rev. IG_Edo 2.0
+Rev. IG 2.0 
 
 - Aggiornato threejs a r95
 - Aggiornati i nomi delle librerie
 - Aggiunto il suono delle porte
 - Eliminate librerie non usate
-- StandardMaterial � diventato PhongMaterial per motivi di performance
+- StandardMaterial è diventato PhongMaterial per motivi di performance
 - Aggiunto GUI per test performance
-
-
