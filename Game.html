@@ -106,10 +106,11 @@
 	document.body.appendChild( webGLRenderer.domElement );
 	webGLRenderer.domElement.style.width = webGLRenderer.domElement.width * res_scale + 'px';
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
-	webGLRenderer.shadowMap.enabled = true;
+	webGLRenderer.shadowMap.enabled = false;
 	/*webGLRenderer.shadowMap.type = THREE.BasicShadowMap;*/
 	
 	console.log(webGLRenderer);
+	
 	
 //------------------------------------------------------------------------------------------//
 
@@ -229,12 +230,14 @@ loop();
 
 	
 
-	function createObject(meshgeom,shape,fixed,mass=0, side=false , rough=0.7, metal=0.3, reflect=1) {
+	function createObject(meshgeom,shape,fixed,mass=0, side=false , rough=0.7, metal=0.3, reflect=1, opacity=1) {
+	
 		if (!side){
 			var meshMaterial = new THREE.MeshPhongMaterial();
 			meshMaterial.roughness = rough;
 			meshMaterial.metalness =  metal;
 			meshMaterial.reflectivity = reflect;
+			meshMaterial.opacity = opacity;
 
 		}
 		else{
@@ -242,7 +245,11 @@ loop();
 			meshMaterial.roughness = rough;
 			meshMaterial.metalness =  metal;
 			meshMaterial.reflectivity = reflect;
+			meshMaterial.opacity = opacity;
 		}
+			
+		if (opacity<1)
+			meshMaterial.transparent=true;
 			
 		var mesh = new THREE.Mesh(meshgeom, meshMaterial);
 		mesh.castShadow = true;
@@ -461,6 +468,8 @@ render();*/
 	var counter=0;
 	var counter1=0;
 	var counter2=0;
+	var counter3=0;
+	
 	var headIsRotating=false;
 	var legIsDoingSpasm=false;
 	var robotIsMoving;
@@ -474,6 +483,11 @@ render();*/
 	var robotHeight= robotScale+(0.2*robotScale); //height of the robot during spydermode
 	var spasmCounter;
 	var legId;
+	
+	var saveIndex =0;
+	var stepsize =0;
+	var tabletActivation = [2];
+	tabletActivation.fill(false);
 	
 	//var robot = new THREE.Group();
 	//robot.add( neck );
@@ -505,7 +519,7 @@ render();*/
 				velocity = 0;
 			velocityDir = 0;
 		}
-		else if(keyboard.pressed("D"))
+		else if((keyboard.pressed("D") & !tabletActivation[0] & robot.position.x<21 ) | (keyboard.pressed("D") & tabletActivation[0]))
 		{
 			if (velocity<maxvelocity)
 			{
@@ -536,7 +550,7 @@ render();*/
 	
 	function robotSelfAnimation()
 	{
-		if ( !headIsRotating && Math.random() >= 0.99)
+		if ( !headIsRotating & Math.random() >= 0.99)
 			{
 				headIsRotating=true;
 				
@@ -545,7 +559,7 @@ render();*/
 				counter=0;
 			}
 
-		if (headIsRotating && Math.abs(counter)<2*Math.PI)
+		if (headIsRotating & Math.abs(counter)<2*Math.PI)
 			{
 				counter += sign * 0.4;
 				headObject.rotation.y = counter;
@@ -603,29 +617,29 @@ render();*/
 			}
 		}
 		
-		if (headIsRotating && velocity!=0)
+		if (headIsRotating & velocity!=0)
 		{
 			if(counter<2*Math.PI)
 			{
-				if (headIsRotating && counter<2*Math.PI)
-			{
-				counter += 0.4;
-				headObject.rotation.y = counter;
-			}
-			else
-			{
-				headIsRotating = false;
-				counter = 0;
-			}
+				if (headIsRotating & counter<2*Math.PI)
+				{
+					counter += 0.4;
+					headObject.rotation.y = counter;
+				}
+				else
+				{
+					headIsRotating = false;
+					counter = 0;
+				}
 			}
 		}
 	}
-		
-	function headAtCenter()
+	
+	function headAtPoint(position=0)
 	{
 		rotator.rotation.z= rotator.rotation.z/1.1;
-		rotator.rotation.x= rotator.rotation.x/1.1;
-		head.rotation.y = head.rotation.y/1.1
+		rotator.rotation.x= rotator.rotation.x/1.1+position;
+		headObject.rotation.y = headObject.rotation.y/1.1;
 	}
 	
 	function ballToLegsTransformation()
@@ -706,9 +720,11 @@ render();*/
 			}
 		}
 	}
+	
+	robotIsInteractingWithTablet = false;
 	function legsAnimation()
 	{
-		function legStep()
+		function legStep(stepsize=0.1*robotScale)
 		{
 			
 			if (sign3==0)
@@ -726,13 +742,13 @@ render();*/
 				if (counter1<4)
 				{
 					upLegsObject[0+c].rotateZ(-0.15);
-					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					upLegsObject[2+c].rotateZ(-0.15);
-					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					upLegsObject[4+c].rotateZ(-0.15);
-					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 					upLegsObject[6+c].rotateZ(-0.15);
-					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 					
 					upLegsObject[3*c].rotateZ(0.075);
 					upLegsObject[3*c+4].rotateZ(0.075);
@@ -745,24 +761,24 @@ render();*/
 					
 					if(step1)
 					{
-						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 						
-						robot.translateX(sign3*0.1*robotScale);
+						robot.translateX(sign3*stepsize);
 					}
 				}
 				else if(counter1<8)
 				{
 					upLegsObject[0+c].rotateZ(0.15);
-					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					upLegsObject[2+c].rotateZ(0.15);
-					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					upLegsObject[4+c].rotateZ(0.15);
-					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 					upLegsObject[6+c].rotateZ(0.15);
-					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 
 					counter1++;
 					
@@ -775,12 +791,12 @@ render();*/
 										
 					if(step1)
 					{
-						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 						
-						robot.translateX(sign3*0.1*robotScale);
+						robot.translateX(sign3*stepsize);
 					}
 					
 					if(velocityDir==sign3)
@@ -790,10 +806,10 @@ render();*/
 				}
 				else if(counter1<12)
 				{
-					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					
 					upLegsObject[1-c].rotateZ(-0.15);
 					upLegsObject[3-c].rotateZ(-0.15);
@@ -809,21 +825,21 @@ render();*/
 					
 					if(step2)
 					{
-						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 					}
 
-					robot.translateX(sign3*0.1*robotScale);
+					robot.translateX(sign3*stepsize);
 					counter1++;
 				}
 				else if(counter1<16)
 				{
-					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[2+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[4+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+					upLegsObject[6+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					
 					upLegsObject[1-c].rotateZ(0.15);
 					upLegsObject[3-c].rotateZ(0.15);
@@ -839,14 +855,14 @@ render();*/
 					
 					if(step2)
 					{
-						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
+						upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+						upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+						upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
 					}
 					
 					
-					robot.translateX(sign3*0.1*robotScale);
+					robot.translateX(sign3*stepsize);
 					counter1++;
 					
 					if(velocityDir==sign3)
@@ -866,33 +882,33 @@ render();*/
 				else if(counter1<20 && !step1)
 				{
 					
-					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					
 					upLegsObject[c].rotateZ(-0.15);
 					upLegsObject[2+c].rotateZ(-0.15);
 					upLegsObject[4+c].rotateZ(-0.15);
 					upLegsObject[6+c].rotateZ(-0.15);
 					
-					robot.translateX(sign3*0.1*robotScale);
+					robot.translateX(sign3*stepsize);
 					counter1++;
 					
 				}
 				else if(counter1<24 && !step1)
 				{
-					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.1);
-					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
-					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.1);
+					upLegsObject[1-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[3-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -sign3*0.58*stepsize);
+					upLegsObject[5-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
+					upLegsObject[7-c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
 					
 					upLegsObject[0+c].rotateZ(0.15);
 					upLegsObject[2+c].rotateZ(0.15);
 					upLegsObject[4+c].rotateZ(0.15);
 					upLegsObject[6+c].rotateZ(0.15);
 					
-					robot.translateX(sign3*0.1*robotScale);
+					robot.translateX(sign3*stepsize);
 					counter1++;
 				}
 				else if(!step1)
@@ -907,10 +923,158 @@ render();*/
 				else
 				{
 					counter1=0;
-					robot.translateX(sign3*0.1*robotScale);
+					robot.translateX(sign3*stepsize);
 				}
 				
 			}
+		}
+		
+		function robotTabletInteracting(saveIndex)
+		{
+			if(counter3<110)
+				headAtPoint(0.1);
+			else
+				headAtPoint(0);
+				
+			if (feet[5].getWorldPosition(vec3).y <3.5 & counter3==0)
+			{
+				upLegsObject[5].rotateZ(-0.015);
+				upLegsObject[6].rotateZ(-0.015);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.003);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.003);
+				knees[5].rotateZ(-0.004);
+				knees[6].rotateZ(-0.004);
+			}
+			else if(counter3<20)
+			{
+				upLegsObject[5].rotateZ(0.03);
+				upLegsObject[6].rotateZ(0.03);
+				knees[5].rotateZ(-0.025);
+				knees[6].rotateZ(-0.025);
+				counter3++;
+			}
+			else if(counter3<30)
+			{
+				upLegsObject[5].rotateZ(-0.015);
+				knees[5].rotateZ(-0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.005);
+				counter3++;
+			}
+			else if(counter3<40)
+			{
+				upLegsObject[5].rotateZ(0.02);
+				upLegsObject[6].rotateZ(-0.015);
+				knees[5].rotateZ(0.01);
+				knees[6].rotateZ(-0.025);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.005);
+				counter3++;
+			}
+			else if(counter3<50)
+			{
+				upLegsObject[5].rotateZ(-0.02);
+				upLegsObject[6].rotateZ(0.015);
+				knees[5].rotateZ(-0.01);
+				knees[6].rotateZ(0.025);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.005);
+				counter3++;
+			}
+			else if(counter3<60)
+			{
+				upLegsObject[5].rotateZ(0.015);
+				upLegsObject[6].rotateZ(-0.01);
+				knees[5].rotateZ(0.03);
+				knees[6].rotateZ(-0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.005);
+				counter3++;
+			}
+			else if(counter3<70)
+			{
+				upLegsObject[5].rotateZ(-0.015);
+				upLegsObject[6].rotateZ(0.01);
+				knees[5].rotateZ(-0.03);
+				knees[6].rotateZ(0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.005);
+				counter3++;
+			}
+			else if(counter3<80)
+			{
+				upLegsObject[5].rotateZ(0.015);
+				upLegsObject[6].rotateZ(-0.015);
+				knees[5].rotateZ(0.01);
+				knees[6].rotateZ(-0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.002);
+				counter3++;
+			}
+			else if(counter3<90)
+			{
+				upLegsObject[5].rotateZ(-0.015);
+				upLegsObject[6].rotateZ(0.015);
+				knees[5].rotateZ(-0.01);
+				knees[6].rotateZ(0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.002);
+				counter3++;
+			}
+			else if(counter3<100)
+			{
+				upLegsObject[5].rotateZ(0.015);
+				upLegsObject[6].rotateZ(-0.015);
+				knees[5].rotateZ(0.01);
+				knees[6].rotateZ(-0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.002);
+				counter3++;
+			}
+			else if(counter3<110)
+			{
+				upLegsObject[5].rotateZ(-0.015);
+				upLegsObject[6].rotateZ(0.015);
+				knees[5].rotateZ(-0.01);
+				knees[6].rotateZ(0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.002);
+				counter3++;
+				
+				tabletActivation[saveIndex]=true;
+			}
+			else if(counter3<120)
+			{
+				upLegsObject[5].rotateZ(0.015);
+				knees[5].rotateZ(0.01);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.005);
+				counter3++;
+			}
+			else if(counter3<140)
+			{
+				upLegsObject[5].rotateZ(-0.03);
+				upLegsObject[6].rotateZ(-0.03);
+				knees[5].rotateZ(0.025);
+				knees[6].rotateZ(0.025);
+				counter3++;
+
+			}
+			else if (feet[5].getWorldPosition(vec3).y >0)
+			{
+				upLegsObject[5].rotateZ(0.015);
+				upLegsObject[6].rotateZ(0.015);
+				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), 0.003);
+				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.003);
+				knees[5].rotateZ(0.004);
+				knees[6].rotateZ(0.004);
+				robotIsInteractingWithTablet=false;
+			}
+			else
+			{
+				counter3=0;
+				headTime=0;
+				transitions=0;
+			}
+			
 		}
 		
 		
@@ -922,20 +1086,53 @@ render();*/
 				
 				robotSelfAnimation();
 				
-				if(keyboard.pressed("space"))
-					transitions=2;
+				for(i=0; i< tabletPositions.length; i++)
+					if (Math.abs(tabletPositions[i]-robot.position.x)<2)
+					{
+						console.log("press E to interact, nTablet="+i + " , tabletPosition=" + tabletPositions[i]);
+						
+						if (keyboard.pressed("E") & !tabletActivation[i])
+						{
+							saveIndex=i;
+							stepsize=(Math.abs(robot.position.x-tabletPositions[i])/8);
+							robotIsInteractingWithTablet = true;
+							transitions = 2;
+						}
+					}
 				
 				break;
 			case 1:
 				legStep();
 				robotSelfAnimation();
-				
 				break;
 			case 2:
-				climb();
+				if (Math.abs(robot.position.x-tabletPositions[saveIndex])>0.3 & !robotIsMoving)
+				{
+					if((tabletPositions[saveIndex]-robot.position.x)>0)
+						velocityDir=1;
+					else
+						velocityDir=-1;
+						
+					legStep(stepsize);
+					transitions = 2;
+					console.log(tabletPositions[saveIndex]);
+				}
+				else
+				{
+					velocityDir=0;
+					legStep(stepsize);
+					transitions = 2;
+					
+					if(!robotIsMoving)
+					{
+						robotTabletInteracting(saveIndex);
+					}
+				}
+
 				break;
 		}
 	}
+	
 	
 	function legsToBallTransformation()
 	{
@@ -1032,8 +1229,13 @@ render();*/
 					velocity=velocity/1.1;
 				}
 				break;
-				
 		}
+		
+		if(keyboard.pressed("Z") & keyboard.pressed("X"))
+			robot.translateX(-2);
+		if(keyboard.pressed("C") & keyboard.pressed("V"))
+			robot.translateX(2);
+			
 		// render using requestAnimationFrame
 		requestAnimationFrame(robotAnimation);
 		webGLRenderer.render(scene, camera);
@@ -1148,13 +1350,13 @@ texture.wrapT = THREE.RepeatWrapping;
 
 var backgroundMesh = new THREE.Mesh(
 	    	/*new THREE.PlaneBufferGeometry(160*1.5,106*1.5,1),*/
-	    	new THREE.SphereBufferGeometry(30, 30, 30),
+	    	new THREE.SphereBufferGeometry(50, 30, 30),
 			new THREE.MeshBasicMaterial({
 	    		map: texture,
 			}));
 
 
-backgroundMesh.position.set(120,5,-100);
+backgroundMesh.position.set(120,5,-180);
 backgroundMesh.rotateY(-Math.PI/2);
 //backgroundMesh.material.depthTest = false;
 //backgroundMesh.material.depthWrite = false;
@@ -1186,6 +1388,8 @@ Mesh1.position.set(3,3,3);
 	//CREATE A WINDOW
 	function createWindow(starshipWindowWidth, starshipWindowHeight)
 	{
+		var starshipWindowGroup = new THREE.Group();
+		
 		var starshipWindowObject = new THREE.Object3D();
 		var geometry = new THREE.Geometry();
 		
@@ -1200,7 +1404,10 @@ Mesh1.position.set(3,3,3);
 		
 		starshipWindowObject = mergeLastFixedObjects(4)
 		
-		return starshipWindowObject;
+		var windowGlass=createObject(new THREE.BoxGeometry(starshipWindowWidth,starshipWindowHeight,0.1), new CANNON.Box(new CANNON.Vec3(starshipWindowWidth/2,starshipWindowHeight/2,0.1/2)), true, 0 ,false,1,0,1,0.3 )
+		
+		starshipWindowGroup.add(starshipWindowObject, windowGlass);
+		return starshipWindowGroup;
 	}
 	
 	//CREATE A DOOR
@@ -1293,12 +1500,13 @@ Mesh1.position.set(3,3,3);
 
 	
 	//CREATE A TABLET
+	var tabletPositions = [];
 	function createTablet() 
 	{
 		var tablet = new THREE.Object3D();
 		
 		var substainForTablet;
-		substainHeight=5;
+		substainHeight=4.5;
 		substainAngle=Math.PI/16;
 		substainForTablet= createObject(new THREE.CylinderGeometry(0.3,0.3,substainHeight,3), new CANNON.Cylinder(0.3,0.3,substainHeight,3), true);
 		substainForTablet.rotation.x=substainAngle;
@@ -1307,13 +1515,14 @@ Mesh1.position.set(3,3,3);
 		
 		var box;
 		tabletWidth=2.5;
-		tabletHeight=3.5;
+		tabletHeight=4;
 		tabletDepth=0.2;
 		box= createObject(new THREE.BoxGeometry(tabletWidth, tabletHeight, tabletDepth), new CANNON.Box(new CANNON.Vec3(tabletWidth/2, tabletHeight/2, tabletDepth/2)), true);
-		box.rotation.x=-Math.PI/6;
+		box.rotation.x=-Math.PI/12;
 		box.position.set(0,substainHeight*Math.cos(substainAngle),(0.7*substainHeight)*Math.sin(substainAngle) );
 		
 		tablet = mergeLastFixedObjects(2);
+		
 		return tablet;
 	}
 	
@@ -1710,9 +1919,10 @@ Mesh1.position.set(3,3,3);
 			objects.add(pistons[i]);
 		
 		var tablet = createTablet();
-		tablet.position.set(25,0,-5);
+		tablet.position.set(23,0,-5.3);
 		objects.add(tablet);
-		
+		tabletPositions.push(23);
+
 		var controlStation = createControlStation();
 		controlStation.position.set(2,0,-15);
 		objects.add(controlStation);
@@ -1733,6 +1943,7 @@ Mesh1.position.set(3,3,3);
 		objects.add(capsule1,capsule2, capsule3);
 		
 		scene.add(objects);
+		
 		return objects;
 	}
 	
@@ -1823,11 +2034,12 @@ Mesh1.position.set(3,3,3);
 		var objects = new THREE.Object3D();
 		
 		var tablet = createTablet();
-		tablet.position.set(0,0,-5);
+		tablet.position.set(0,0,-5.3);
 		objects.add(tablet);
-		
+		tabletPositions.push(240);
 		
 		objects.position.x=240;
+
 		return objects;
 	}
 	
@@ -1953,7 +2165,7 @@ Mesh1.position.set(3,3,3);
 	{
 		
 		
-		if (roomHasBackDoor[currentRoom+1])
+		if (roomHasBackDoor[currentRoom+1] & tabletActivation[0])
 		{
 			if (robot.position.x>17+(60*currentRoom))
 			{
@@ -1965,8 +2177,10 @@ Mesh1.position.set(3,3,3);
 				}
 			}
 			else
-				if(doorsArray[currentRoom].position.z<=0)
+				if(doorsArray[currentRoom].position.z<0)
 				{
+					if (sound.isPlaying == false){AudioDoorPlay();
+					sound.isPlaying = true;}
 					doorsArray[currentRoom].translateZ(0.5);
 				}
 		}
@@ -1981,8 +2195,10 @@ Mesh1.position.set(3,3,3);
 				}
 			}
 			else
-				if(doorsArray[currentRoom-1].position.z<=0)
+				if(doorsArray[currentRoom-1].position.z<0)
 				{
+					if (sound.isPlaying == false){AudioDoorPlay();
+					sound.isPlaying = true;}
 					doorsArray[currentRoom-1].translateZ(0.5);
 				}
 		
@@ -2026,7 +2242,7 @@ Mesh1.position.set(3,3,3);
 		securityCameraAnimation();		//animate the security camera
 		planetHoloAnimation();			//planet hologram animation
 		pistonsAnimation();
-		
+		backgroundMesh.position.x=robot.position.x;
 		updatePhysics();					//update the physic
 		director();							//a director which manage the camera
 		optimization();
@@ -2069,6 +2285,7 @@ Mesh1.position.set(3,3,3);
 	var triggers = 0;
 	
 	//damping coefficients
+	var dampX=0;
 	var dampY=0;
 	var dampZ=0;
 	var dampLAx=0;
@@ -2077,7 +2294,7 @@ Mesh1.position.set(3,3,3);
 	function director()
 	{
 		
-		//at the left of 0, activate the left edge trigger
+		//at the left of -5, activate the left edge trigger
 		if (robot.position.x<-5)
 			triggers=1;
 		
@@ -2091,17 +2308,34 @@ Mesh1.position.set(3,3,3);
 			triggers=2;
 		}
 		
+		//Robot interaction with tablet
+		if (robotIsInteractingWithTablet & triggers!=3)
+		{
+			dampZ=15;
+			triggers = 3;
+		}
+		else if(!robotIsInteractingWithTablet & triggers==3)
+		{
+			dampX=-velocity/2;
+			dampZ=-15;
+			dampY=0;
+			dampLAx=-velocity/2;
+			dampLAz=0;
+			triggers = 0;
+		}
+		
 		//switching between different directors
 		switch (triggers)
 		{
 				
 			// 0 for standard director
 			case 0:
-				camera.position.x = robot.position.x+velocity/2;				
+				camera.position.x = robot.position.x+velocity/2+dampX;				
 				camera.position.y=10+dampY;
 				camera.position.z=20+dampZ;
 				camera.lookAt(robot.position.x+velocity/2+dampLAx,5,0+dampLAz);
-
+				
+				dampX=dampX/1.033;
 				dampY=dampY/1.033;
 				dampZ=dampZ/1.033;
 				dampLAx=dampLAx/1.033;
@@ -2143,8 +2377,14 @@ Mesh1.position.set(3,3,3);
 					triggers=0;
 				}
 				break;
-				
-
+			
+			// 3 for robot that interact with tablet
+			case 3:
+				camera.position.x = robot.position.x;				
+				camera.position.z=dampZ+5;
+				camera.lookAt(robot.position.x+dampLAx,5,0);
+				dampZ=dampZ/1.033;
+				break
 				
 		}
 	}
