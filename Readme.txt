@@ -14,6 +14,11 @@ P3) Utilizzare LambertMaterial sostituendolo a PhongMaterial
 
 
 
+Rev IG 2.3
+
+- Aggiunta Intro
+- Aggiunta rumore + musica di sottofondo
+
 
 Rev IG 2.2
 
