@@ -682,7 +682,8 @@ render();*/
 			}
 			spyderTime+=0.015;
 			
-			legSpasm();
+			if(!intro2)
+				legSpasm();
 		}
 		
 
@@ -811,6 +812,8 @@ render();*/
 			}
 			
 			robot.position.y=2.0400000000000023;
+			
+			rotationAngles[kneesId] = 0.5*Math.PI;
 			
 			upLegsObject[0].rotation.z= 1.7480972450961723;
 			upLegsObject[1].rotation.z= 1.7480972450961723;
@@ -1324,10 +1327,22 @@ render();*/
 			ballToLegsTransformation(true);
 		else if(intro2 & robot.position.x<0)
 		{
-			velocity = 3;
-			velocityDir = 1;
+			if(doorCapsule.rotation.y<0)
+			{
+				if (!robotIsMoving)
+					setTimeout( function() 
+					{
+						velocity = 3;
+						velocityDir = 1;
+					}, 1000);
+				else
+				{
+					velocity = 3;
+					velocityDir = 1;
+				}
+			}
 		}
-
+		if(!intro)
 		switch (transformation)
 		{
 			case 0:
@@ -2184,7 +2199,7 @@ Mesh1.position.set(3,3,3);
 	var planetHolo;
 	function createObjectForRoom3()
 	{
-		var objects = new THREE.Object3D();
+		var objects = new THREE.Group();
 		
 		planetHolo = createObject(new THREE.SphereGeometry(2, 8, 8),  new CANNON.Sphere(2), 10);
 		bodies[bodies.length-1].position.set(150, 7.5, -12.2);
@@ -2227,7 +2242,7 @@ Mesh1.position.set(3,3,3);
 	
 	function createObjectForRoom4()
 	{
-		var objects = new THREE.Object3D();
+		var objects = new THREE.Group();
 		
 		var tablet = createTablet();
 		tablet.position.set(0,0,-5.3);
@@ -2235,6 +2250,25 @@ Mesh1.position.set(3,3,3);
 		tabletPositions.push(240);
 		
 		objects.position.x=240;
+
+		return objects;
+	}
+	
+	//::::::::::::::::::::::ROOM5:::::::::::::::::::::://
+	
+	function createObjectForRoom5()
+	{
+		var objects = new THREE.Group();
+		
+		var container1 = createContainer();
+		container1.position.set(-16.7,0,-12.4);
+		objects.add(container1);
+		
+		var container2 = createContainer();
+		container2.position.set(9,0,-12.4);
+		objects.add(container2);
+		
+		objects.position.x=300;
 
 		return objects;
 	}
@@ -2368,6 +2402,7 @@ function backgroundMusic(){
 	roomsObjects[1]=createObjectForRoom1();
 	roomsObjects[3]=createObjectForRoom3()
 	roomsObjects[4]=createObjectForRoom4();
+	roomsObjects[5]=createObjectForRoom5();
 	
 	//create the edge
 	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)) );
@@ -2440,13 +2475,13 @@ function backgroundMusic(){
 				}
 		
 		//doorCapsule animation
-		if(robot.position.x<-9 && doorOpen)
+		if(robot.position.x<-9 && doorOpen && intro2)
 		
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
-				doorCapsule.rotateY(0.07);
-				if (sound.isPlaying == false){ sound.playbackRate= 2; AudioDoorPlay(2); sound.isPlaying = true;}
+				doorCapsule.rotateY(0.02);
+				if (sound.isPlaying == false){ sound.playbackRate= 0.75; AudioDoorPlay(0.75); sound.isPlaying = true;}
 				
 			}
 		}
@@ -2454,8 +2489,8 @@ function backgroundMusic(){
 		{
 			if(doorCapsule.rotation.y<=0 )
 			{
-				doorCapsule.rotateY(0.07);
-				
+				doorCapsule.rotateY(0.02);
+				if (sound.isPlaying == false){ sound.playbackRate= 0.75; AudioDoorPlay(0.75); sound.isPlaying = true;}
 			}
 		}
 		
@@ -2534,7 +2569,7 @@ function backgroundMusic(){
 	function director()
 	{
 		//
-		if (intro2 & triggers==-2)
+		if (intro2 & triggers==-2 & doorCapsule.rotation.y<0)
 		{
 			dampX= camera.position.x;
 			dampY= camera.position.y - 10;
@@ -2582,9 +2617,9 @@ function backgroundMusic(){
 				camera.position.z=20+dampZ;
 				camera.lookAt(robot.position.x,5,0);
 				
-				dampX=dampX/1.033;
-				dampY=dampY/1.033;
-				dampZ=dampZ/1.033;
+				dampX=dampX/1.013;
+				dampY=dampY/1.013;
+				dampZ=dampZ/1.013;
 				
 				if (robot.position.x>-4.5)
 				{
