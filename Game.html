@@ -371,11 +371,11 @@ function onDocumentMouseDown( event ) {
 		
 	}
 
-	
-	function mergeLastFixedObjects(number, material=materialStandard) {
+	var mark = new THREE.Object3D();
+	function mergeLastFixedObjects(number, material=materialStandard, markFlag=false) {
 		
 		var newGeometry = new THREE.Geometry();
-		var shapes = [];
+		
 		var body = new CANNON.Body({
 			mass: 0
 		});
@@ -387,13 +387,53 @@ function onDocumentMouseDown( event ) {
 		for(i=number; i>0; i--)
 		{
 			newGeometry.mergeMesh(meshes[meshes.length-i]);
-			for (j=0; j<bodies[meshes.length-i].shapes.length; j++)
+			
+			var shapes = [];
+			var shapeOffsets = [];
+			var shapeOrientations = [];
+			
+				
+			for (var j=0; j<bodies[meshes.length-i].shapes.length; j++)
+			{
 				shapes.push(bodies[meshes.length-i].shapes[j]);
+				shapeOffsets.push(bodies[meshes.length-i].shapeOffsets[j]);
+				shapeOrientations.push(bodies[meshes.length-i].shapeOrientations[j]);
+				//console.log()
+			}
 				
 			vec3 = meshes[meshes.length-i].position;
 			quaternion = meshes[meshes.length-i].quaternion;
-			body.addShape(shapes[shapes.length-1], new CANNON.Vec3(vec3.x,vec3.y,vec3.z), new CANNON.Quaternion(quaternion.x , quaternion.y , quaternion.z, quaternion.w));
+			
+			if(markFlag)
+			{
+				//console.log("position of body: " + bodies[meshes.length-i].position);
+				console.log(vec3);
+				console.log("number of shapes: " + shapes.length);
+				console.log(shapeOffsets);
+				console.log(shapeOrientations);
+			}
+			
+			
+			
+			for(var j=0; j<shapes.length; j++)
+			{	
+				//body.addShape(shapes[j], new CANNON.Vec3(vec3.x +shapeOffsets[j].x,vec3.y+shapeOffsets[j].y,vec3.z+shapeOffsets[j].z), new CANNON.Quaternion(quaternion.x +shapeOrientations[j].x, quaternion.y +shapeOrientations[j].y , quaternion.z +shapeOrientations[j].z , quaternion.w +shapeOrientations[j].w));
+				body.addShape(shapes[j], new CANNON.Vec3(vec3.x +shapeOffsets[j].x,vec3.y+shapeOffsets[j].y,vec3.z+shapeOffsets[j].z), new CANNON.Quaternion(quaternion.x , quaternion.y , quaternion.z , quaternion.w ));
+			}
+			
+			if(markFlag)
+			{
+				mark = createObject(new THREE.BoxBufferGeometry(1,1,0.1))
+				mark.position.set(vec3.x , vec3.y , vec3.z, vec3.w);
+				mark.quaternion.set(quaternion.x , quaternion.y , quaternion.z, quaternion.w);
+				scene.add(mark);
+				//console.log(quaternion);
+			}
+			
+						
 		}
+		if(markFlag)
+		console.log(body);
 		
 		for(i=number; i>0; i--)
 		{
@@ -1573,16 +1613,13 @@ Mesh1.position.set(3,3,3);
 	
 	
 	//CREATE A WALL FOR DOOR
-	function createWallForDoor(depth,height)
+	function createWallForDoor(depth,height, thickness=2, doorWidth=8, doorHeight=10)
 	{
-		var doorWidth=8;
-		var doorHeight=10;
-		
-		var wall1Object = createObject(new THREE.BoxGeometry(2,height,(depth-doorWidth)/2), new CANNON.Box(new CANNON.Vec3(1,height/2,(depth-doorWidth)/4)));
+		var wall1Object = createObject(new THREE.BoxGeometry(thickness,height,(depth-doorWidth)/2), new CANNON.Box(new CANNON.Vec3(thickness/2,height/2,(depth-doorWidth)/4)));
 		wall1Object.position.set(0,height/2,-(doorWidth/2)-((depth-doorWidth)/4));
-		var wall2Object = createObject(new THREE.BoxGeometry(2,height,(depth/2)-(doorWidth/2)), new CANNON.Box(new CANNON.Vec3(1,height/2,((depth/2)-(doorWidth/2))/2)));
+		var wall2Object = createObject(new THREE.BoxGeometry(thickness,height,((depth/2)-(doorWidth/2))), new CANNON.Box(new CANNON.Vec3(thickness/2,height/2,((depth/2)-(doorWidth/2))/2)));
 		wall2Object.position.set(0,height/2,+(doorWidth/2)+((depth-doorWidth)/4));
-		var wall3Object = createObject(new THREE.BoxGeometry(2,height-doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1,(height-doorHeight)/2,doorWidth/2)));
+		var wall3Object = createObject(new THREE.BoxGeometry(thickness,height-doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(thickness/2,(height-doorHeight)/2,doorWidth/2)));
 		wall3Object.position.set(0,height-((height-doorHeight)/2),0);
 		
 		
@@ -1760,60 +1797,96 @@ Mesh1.position.set(3,3,3);
 	}
 	
 	//CREATE CONTAINER
-	function createContainer(closed=true)
+	function createContainer(opened=false)
 	{
-		var containerWidth = 25;
+		var containerWidth = 27;
 		var containerHeight = 15;
-		var containerDepth = 14;
-		var doorWidth = 8
-		var doorHeight = 8
-		
+		var containerDepth = 12;
+		var doorWidth = 8;
+		var doorHeight = 9.5;
+		var braceWidth = 0.5;
+			
 		var containerGroup = new THREE.Group();
 		
-		var backWall = createObject(new THREE.BoxGeometry(containerWidth+0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15+containerWidth/2,containerHeight/2,0.15)));
+		var backWall = createObject(new THREE.BoxGeometry(containerWidth+braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2+containerWidth/2,containerHeight/2,braceWidth/2)));
 		backWall.position.set(0, containerHeight/2, -containerDepth/2);
 		
-		var leftWall = createObject(new THREE.BoxGeometry(0.3,containerHeight,containerDepth-0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,containerDepth/2-0.15)));
+		var leftWall = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,containerDepth-braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,containerDepth/2-braceWidth/2)));
 		leftWall.position.set(-containerWidth/2, containerHeight/2, 0);
 		
-		var rightWall = createObject(new THREE.BoxGeometry(0.3,containerHeight,containerDepth-0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,containerDepth/2-0.15)));
+		var rightWall = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,containerDepth-braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,containerDepth/2-braceWidth/2)));
 		rightWall.position.set(containerWidth/2, containerHeight/2, 0);
 		
-		if (closed)
-		{
-			var frontWall= createObject(new THREE.BoxGeometry(containerWidth+0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15+containerWidth/2,containerHeight/2,0.15)));
-			frontWall.position.set(0, containerHeight/2, containerDepth/2);
-		}
-		else
-		{
-			
-		}
+		var wallForDoor= createWallForDoor(containerWidth,containerHeight,braceWidth,doorWidth,doorHeight);
+			wallForDoor.rotateY(Math.PI/2);
+			wallForDoor.position.set(0, 0, containerDepth/2);
 		
 		var wall = new THREE.Object3D();
 		wall = mergeLastFixedObjects(4, materialGlass)
 		
-		var braceLB = createObject(new THREE.BoxGeometry(0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,0.15)));
+		var door = new THREE.Group();
+		
+		var glass = createObject(new THREE.BoxGeometry(doorWidth+braceWidth,doorHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(doorWidth/2,doorHeight/2,braceWidth/2)), 0, materialGlass);
+		door.add(glass);
+		
+		var braceL = createObject(new THREE.BoxGeometry(braceWidth,doorHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,doorHeight/2,braceWidth/2)));
+		braceL.position.set(-doorWidth/2+braceWidth/2, 0, 0);
+		
+		var braceR = createObject(new THREE.BoxGeometry(braceWidth,doorHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,doorHeight/2,braceWidth/2)));
+		braceR.position.set(doorWidth/2-braceWidth/2, 0, 0);
+		
+		var braceB = createObject(new THREE.BoxGeometry(doorWidth,braceWidth,braceWidth), new CANNON.Box(new CANNON.Vec3(doorHeight/2,braceWidth/2,braceWidth/2)));
+		braceB.position.set(0, -doorHeight/2+braceWidth/2, 0);
+		
+		var braceT = createObject(new THREE.BoxGeometry(doorWidth,braceWidth,braceWidth), new CANNON.Box(new CANNON.Vec3(doorHeight/2,braceWidth/2,braceWidth/2)));
+		braceT.position.set(0, doorHeight/2-braceWidth/2, 0);
+		
+		var braceC = createObject(new THREE.BoxGeometry(braceWidth,doorHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,doorHeight/2,braceWidth/2)));
+		
+		var circle = createObject(new THREE.CylinderGeometry(1.5,1.5,braceWidth,16), new CANNON.Cylinder(1.5,1.5,braceWidth,16));
+		circle.rotateX(Math.PI/2);
+		
+		var bracesDoor = mergeLastFixedObjects(6);
+		//bodies[bodies.length-1]=null;
+		
+		door.add(bracesDoor);
+		
+		if (opened)
+		{
+			door.position.set(-doorWidth, doorHeight/2, containerDepth/2-braceWidth-0.1);
+		}
+		else
+		{
+			door.position.set(0, doorHeight/2, containerDepth/2-braceWidth);
+		}
+		
+		
+		var braceLB = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
 		braceLB.position.set(-containerWidth/2, containerHeight/2, -containerDepth/2);
 		
-		var braceLF = createObject(new THREE.BoxGeometry(0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,0.15)));
+		var braceLF = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
 		braceLF.position.set(-containerWidth/2, containerHeight/2, containerDepth/2);
 		
-		var braceRB = createObject(new THREE.BoxGeometry(0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,0.15)));
+		var braceRB = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
 		braceRB.position.set(containerWidth/2, containerHeight/2, -containerDepth/2);
 		
-		var braceRF = createObject(new THREE.BoxGeometry(0.3,containerHeight,0.3), new CANNON.Box(new CANNON.Vec3(0.15,containerHeight/2,0.15)));
+		var braceRF = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
 		braceRF.position.set(containerWidth/2, containerHeight/2, containerDepth/2);
 		
-		var braces = mergeLastFixedObjects(4);
+		var braceDoorR = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
+		braceDoorR.position.set(doorWidth/2, containerHeight/2, containerDepth/2);
 		
-		containerGroup.add(wall, braces);
+		var braceDoorL = createObject(new THREE.BoxGeometry(braceWidth,containerHeight,braceWidth), new CANNON.Box(new CANNON.Vec3(braceWidth/2,containerHeight/2,braceWidth/2)));
+		braceDoorL.position.set(-doorWidth/2, containerHeight/2, containerDepth/2);
+		
+		var braceTop = createObject(new THREE.BoxGeometry(doorWidth,braceWidth,braceWidth), new CANNON.Box(new CANNON.Vec3(doorWidth/2,braceWidth/2,braceWidth/2)));
+		braceTop.position.set(0,doorHeight+(braceWidth/2),containerDepth/2);
+		
+		var braces = mergeLastFixedObjects(7);
+		
+		containerGroup.add(wall, braces, door);
 		return containerGroup;
 	}
-	/*
-	var container = createContainer();
-	container.position.z=-12.4
-	scene.add(container);
-	*/
 	
 	
 	//CREATE BOX AT WALL
@@ -2191,6 +2264,28 @@ Mesh1.position.set(3,3,3);
 		objects.position.x=60;
 		scene.add(objects);
 		
+		var test1 = createObject(new THREE.BoxGeometry( 3, 4, 1 ), new CANNON.Box ( new CANNON.Vec3(1.5,2,0.2)) );
+		test1.position.set(-4+60, 5, -5);
+		test1.rotation.set(0.2,0.1,0.1)
+		
+		var test2 = createObject(new THREE.BoxGeometry( 3, 4, 1 ), new CANNON.Box ( new CANNON.Vec3(1.5,2,0.2)) );
+		test2.position.set(4+60, 5, -5);
+		test2.rotation.set(1,0.1,0.2)
+
+		var testBig = mergeLastFixedObjects(2,materialGlass);
+		//testBig.rotation.set(0.1,0,0);
+		//testBig.translateX(0.5);
+		
+		var testBig2 = createObject(new THREE.BoxGeometry( 3, 4, 1 ), new CANNON.Box ( new CANNON.Vec3(1.5,2,0.2)) );
+		testBig2.position.set(-2+60, 10, -5);
+		testBig2.rotation.set(0,0.1,0)
+		
+		var finalTest = mergeLastFixedObjects(2, materialGlass, true);
+		//finalTest.translateX(60);
+		//test.translateX(5);
+		scene.add(finalTest);
+		//scene.add(testBig2);
+		
 		return objects;
 	}
 	
@@ -2260,13 +2355,21 @@ Mesh1.position.set(3,3,3);
 	{
 		var objects = new THREE.Group();
 		
-		var container1 = createContainer();
-		container1.position.set(-16.7,0,-12.4);
+		var container1 = createContainer(false);
+		container1.position.set(-14.8,0,-13.4);
 		objects.add(container1);
 		
-		var container2 = createContainer();
-		container2.position.set(9,0,-12.4);
+		var container2 = createContainer(true);
+		container2.position.set(12.8,0,-13.4);
 		objects.add(container2);
+		
+		var tablet1 = createTablet();
+		tablet1.position.set(container1.position.x+6.5,0,-5.3)
+		objects.add(tablet1);
+		
+		var tablet2 = createTablet();
+		tablet2.position.set(container2.position.x+6.5,0,-5.3)
+		objects.add(tablet2);
 		
 		objects.position.x=300;
 
@@ -2480,7 +2583,7 @@ function backgroundMusic(){
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
-				doorCapsule.rotateY(0.02);
+				doorCapsule.rotateY(1.02);
 				if (sound.isPlaying == false){ sound.playbackRate= 0.75; AudioDoorPlay(0.75); sound.isPlaying = true;}
 				
 			}
@@ -2530,7 +2633,7 @@ function backgroundMusic(){
 		if(keyboard.pressed("F"))
 		{
 			var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
-			bodies[bodies.length-1].position.set(240,7,0);
+			bodies[bodies.length-1].position.set(290,7,-10);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
 			bodies[bodies.length-1].velocitydamping = 0.0;
@@ -2543,7 +2646,7 @@ function backgroundMusic(){
 		{
 			flagTest= false;
 			var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
-			bodies[bodies.length-1].position.set(41,8,0);
+			bodies[bodies.length-1].position.set(53,5,10);
 			testMesh.position.set(bodies[bodies.length-1].position);
 			bodies[bodies.length-1].velocity.set(0,0,-5);
 			bodies[bodies.length-1].velocitydamping = 0.0;
