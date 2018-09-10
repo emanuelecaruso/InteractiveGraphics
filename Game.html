@@ -403,7 +403,6 @@ function onDocumentMouseDown( event ) {
 				shapeOffsets[j].z = bodies[meshes.length-i].shapeOffsets[j].z;
 				
 				shapeOrientations.push(bodies[meshes.length-i].shapeOrientations[j]);
-				//console.log()
 			}
 				
 			vec3 = meshes[meshes.length-i].position;
@@ -627,8 +626,11 @@ render();*/
 	
 	var saveIndex =0;
 	var stepsize =0;
-	var tabletActivation = [2];
+	
+	var tabletActivation = new Array(6);
 	tabletActivation.fill(false);
+	var tabletReuse = new Array(tabletActivation.length);
+	tabletReuse.fill(false);
 	
 	//var robot = new THREE.Group();
 	//robot.add( neck );
@@ -1214,7 +1216,13 @@ render();*/
 				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.002);
 				counter3++;
 				
-				tabletActivation[saveIndex]=true;
+				if(counter3==109)
+			    {
+					if (tabletReuse[saveIndex])
+						tabletActivation[saveIndex]=!tabletActivation[saveIndex];
+					else
+						tabletActivation[saveIndex]=true;
+			    }
 			}
 			else if(counter3<120)
 			{
@@ -1263,14 +1271,15 @@ render();*/
 				for(i=0; i< tabletPositions.length; i++)
 					if (Math.abs(tabletPositions[i]-robot.position.x)<2)
 					{
-						console.log("press E to interact, nTablet="+i + " , tabletPosition=" + tabletPositions[i]);
+						//console.log("press E to interact, nTablet="+i + " , tabletPosition=" + tabletPositions[i]);
 						
-						if (keyboard.pressed("E") & !tabletActivation[i])
+						if (keyboard.pressed("E") & (!tabletActivation[i] | tabletReuse[i]))
 						{
 							saveIndex=i;
 							stepsize=(Math.abs(robot.position.x-tabletPositions[i])/8);
 							robotIsInteractingWithTablet = true;
 							transitions = 2;
+							
 						}
 					}
 				
@@ -1289,7 +1298,7 @@ render();*/
 						
 					legStep(stepsize);
 					transitions = 2;
-					console.log(tabletPositions[saveIndex]);
+					//console.log(tabletPositions[saveIndex]);
 				}
 				else
 				{
@@ -1299,7 +1308,10 @@ render();*/
 					
 					if(!robotIsMoving)
 					{
-						robotTabletInteracting(saveIndex);
+						if (saveIndex<=1)
+							robotTabletInteracting(saveIndex);
+						else
+							robotTabletInteracting(saveIndex, true);
 					}
 				}
 
@@ -1455,6 +1467,8 @@ render();*/
 	//***************************************************************************//
 	
 	var doorsArray = [];
+	var doorsContainerArray = [];
+
 	var roomHasFrontDoor = [];
 	var roomHasBackDoor = [];
 	var boxLength =1.7;
@@ -1798,6 +1812,7 @@ Mesh1.position.set(3,3,3);
 		return controlStation;
 	}
 	
+	var containers = [];
 	//CREATE CONTAINER
 	function createContainer(opened=false)
 	{
@@ -1887,6 +1902,10 @@ Mesh1.position.set(3,3,3);
 		wall = mergeLastFixedObjects(4, materialGlass)
 		
 		containerGroup.add(wall, braces, door);
+		
+		doorsContainerArray.push(door);
+		containers.push(containerGroup);
+		
 		return containerGroup;
 	}
 	
@@ -2207,7 +2226,6 @@ Mesh1.position.set(3,3,3);
 		var tablet = createTablet();
 		tablet.position.set(23,0,-5.3);
 		objects.add(tablet);
-		tabletPositions.push(23);
 
 		var controlStation = createControlStation();
 		controlStation.position.set(2,0,-15);
@@ -2229,7 +2247,8 @@ Mesh1.position.set(3,3,3);
 		objects.add(capsule1,capsule2, capsule3);
 		
 		scene.add(objects);
-		
+		tabletPositions.push(tablet.position.x+objects.position.x);
+
 		return objects;
 	}
 	
@@ -2322,10 +2341,10 @@ Mesh1.position.set(3,3,3);
 		var tablet = createTablet();
 		tablet.position.set(0,0,-5.3);
 		objects.add(tablet);
-		tabletPositions.push(240);
 		
 		objects.position.x=240;
-
+		
+		tabletPositions.push(tablet.position.x+objects.position.x);
 		return objects;
 	}
 	
@@ -2335,7 +2354,7 @@ Mesh1.position.set(3,3,3);
 	{
 		var objects = new THREE.Group();
 		
-		var container1 = createContainer(false);
+		var container1 = createContainer(true);
 		container1.position.set(-14.8,0,-13.4);
 		objects.add(container1);
 		
@@ -2351,12 +2370,48 @@ Mesh1.position.set(3,3,3);
 		tablet2.position.set(container2.position.x+6.5,0,-5.3)
 		objects.add(tablet2);
 		
-		console.log(bodies[bodies.length-1]);
-
 		objects.position.x=300;
+		
+		tabletPositions.push(tablet1.position.x+objects.position.x);
+		tabletPositions.push(tablet2.position.x+objects.position.x);
+		tabletReuse[2]=true;
+		tabletReuse[3]=true;
 		
 		return objects;
 	}
+	
+	//::::::::::::::::::::::ROOM6:::::::::::::::::::::://
+	
+	function createObjectForRoom6()
+	{
+		var objects = new THREE.Group();
+		
+		var container1 = createContainer(true);
+		container1.position.set(-14.8,0,-13.4);
+		objects.add(container1);
+		
+		var container2 = createContainer(true);
+		container2.position.set(12.8,0,-13.4);
+		objects.add(container2);
+		
+		var tablet1 = createTablet();
+		tablet1.position.set(container1.position.x+6.5,0,-5.3)
+		objects.add(tablet1);
+		
+		var tablet2 = createTablet();
+		tablet2.position.set(container2.position.x+6.5,0,-5.3)
+		objects.add(tablet2);
+		
+		objects.position.x=360;
+		
+		tabletPositions.push(tablet1.position.x+objects.position.x);
+		tabletPositions.push(tablet2.position.x+objects.position.x);
+		tabletReuse[4]=true;
+		tabletReuse[5]=true;
+		
+		return objects;
+	}
+	
 	
 	//-------------------------------------------------------------//
 	//-------------------------TUBE-LIGHT--------------------------//
@@ -2478,7 +2533,7 @@ function backgroundMusic(){
 	rooms[3] = createStandardRoom(false,false,3);
 	rooms[4] = createCircleRoom(false,4);
 	rooms[5] = createStandardRoom(false,true,5);
-	rooms[6] = createStandardRoom(false,true,6);
+	rooms[6] = createStandardRoom(false,false,6);
 	rooms[7] = createStandardRoom(false,false,7);
 	
 	//create objects inside rooms
@@ -2488,6 +2543,7 @@ function backgroundMusic(){
 	roomsObjects[3]=createObjectForRoom3()
 	roomsObjects[4]=createObjectForRoom4();
 	roomsObjects[5]=createObjectForRoom5();
+	roomsObjects[6]=createObjectForRoom6();
 	
 	//create the edge
 	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)) );
@@ -2521,7 +2577,7 @@ function backgroundMusic(){
 	function doorsAnimation()
 	{
 		
-		
+		//doors of rooms animation
 		if (roomHasBackDoor[currentRoom+1] & tabletActivation[0])
 		{
 			if (robot.position.x>17+(60*currentRoom))
@@ -2559,9 +2615,8 @@ function backgroundMusic(){
 					doorsArray[currentRoom-1].translateZ(0.5);
 				}
 		
-		//doorCapsule animation
+		//door capsule animation
 		if(robot.position.x<-9 && doorOpen && intro2)
-		
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
@@ -2579,10 +2634,25 @@ function backgroundMusic(){
 			}
 		}
 		
+		//doors of containers animation
+		for(var i=0; i<doorsContainerArray.length; i++)
+		{
+			if(tabletActivation[i+2] & tabletReuse[i+2])
+			{				
+				if(doorsContainerArray[i].getWorldPosition(vec3).x < (containers[i].getWorldPosition(vec3).x))
+					doorsContainerArray[i].translateX(0.1);				
+			}
+			else
+			{
+				if(doorsContainerArray[i].getWorldPosition(vec3).x > (containers[i].getWorldPosition(vec3).x - 8))
+					doorsContainerArray[i].translateX(-0.1);
+			}
+		}
 	}
 	
-	function planetHoloAnimation(){
-	planetHolo.rotateY(0.02);
+	function planetHoloAnimation()
+	{
+		planetHolo.rotateY(0.02);
 	}
 	
 	function securityCameraAnimation()
@@ -2596,15 +2666,15 @@ function backgroundMusic(){
 	//function which animate the map
 	function mapAnimation()
 	{
-		worldTime += clock.getDelta();		//update the world time
+		worldTime += clock.getDelta();						//update the world time
 		currentRoom = Math.floor((robot.position.x+30)/60);
-		doorsAnimation();					//animation of doors (including the CAPSULE DOOR)
-		securityCameraAnimation();		//animate the security camera
-		planetHoloAnimation();			//planet hologram animation
+		doorsAnimation();									//animation of doors (including the CAPSULE DOOR)
+		securityCameraAnimation();							//animate the security camera
+		planetHoloAnimation();								//planet hologram animation
 		pistonsAnimation();
 		backgroundMesh.position.x=robot.position.x;
-		updatePhysics();					//update the physic
-		director();				//a director which manage the camera
+		updatePhysics();									//update the physic
+		director();											//a director which manage the camera
 		optimization();
 		
 		//test for gravity
