@@ -226,7 +226,7 @@ mesh2.rotation.y = 0;
 mesh2.rotation.x = -Math.PI/2 ;
 scene.add(mesh2);*/
 
-mesh3 = createLabel("Press E", 23, 8, -5.5, 20, "white", 20, 10);
+mesh3 = createLabel("Press F", 23, 8, -5.5, 20, "white", 20, 10);
 mesh3.rotation.y = 0;
 mesh3.rotation.x = 0 ;
 scene.add(mesh3);
@@ -344,6 +344,11 @@ function onDocumentMouseDown( event ) {
 	//materialGlass.reflectivity = 1;
 	materialGlass.opacity = 0.3;
 	
+	var materialLight  = new THREE.MeshLambertMaterial( {
+	emissive: 0xffffff,
+	emissiveIntensity: 0,
+	color: 0xffffff
+	});	
 	//------------------------------------------------------
 
 	function createObject(meshgeom,shape,mass=0, material=materialStandard) {
@@ -545,7 +550,6 @@ render();*/
 	var headObject = createObject(new THREE.BoxBufferGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)));
 	headObject.position.set(0,1.25*robotScale,0);
 	
-	
 	var upLegsObject = [];
 	var downLegsObject = [];
 	var upLegsLength =1.3;
@@ -566,6 +570,18 @@ render();*/
 	var sign3 = 0;
 	var sign4 = 0;
 	
+	var torchObject = createObject(new THREE.CylinderBufferGeometry(robotScale*0.2,robotScale*0.2,robotScale*0.1,8),  new CANNON.Cylinder(robotScale*0.4,robotScale*0.4,robotScale*0.1,8), 0, materialLight );
+	torchObject.rotation.z=Math.PI/2;
+	torchObject.position.x=0.4*robotScale;
+	headObject.add(torchObject);
+	var torchlight = new THREE.SpotLight( 0xffffff, 0.0, 100, Math.PI/4, 1, 2 )
+	var torchlightTarget = new THREE.Object3D();
+	torchlightTarget.position.x=100;
+	torchlight.position.x=0.41*robotScale;
+	//torchlight.rotateY(Math.PI);
+	headObject.add(torchlight, torchlightTarget);
+	torchlight.target=torchlightTarget;
+	var torchIsOn = false;
 	
 	for(var i =0; i<8; i++)
 	{
@@ -727,7 +743,7 @@ render();*/
 		rotator.rotation.z= dampingZ = sign1*0.5*Math.sin(2*headTime);
 		rotator.rotation.x= dampingX = sign2*0.5*Math.sin(3*headTime);
 		
-		if(spyderMode && !robotIsMoving)
+		if(spyderMode & !robotIsMoving)
 		{
 			robot.translateY(-0.01*(robotScale/3)*(Math.sin(3*spyderTime)));
 			for(var i=0; i<8; i++)
@@ -790,12 +806,14 @@ render();*/
 		}
 	}
 	
-	function headAtPoint(position=0)
+	function headAtPoint(position=0, excludeHead=false)
 	{
 		rotator.rotation.z= rotator.rotation.z/1.1;
 		rotator.rotation.x= rotator.rotation.x/1.1+position;
-		headObject.rotation.y = headObject.rotation.y/1.1;
+		if(!excludeHead)
+			headObject.rotation.y = headObject.rotation.y/1.1;
 	}
+	
 	
 	function ballToLegsTransformation(instantaneous=false)
 	{
@@ -828,7 +846,7 @@ render();*/
 				rotationAngles[kneesId] -= 0.06;
 			}
 
-			else if(feet[0].getWorldPosition(vec3).y>0 && !step)
+			else if(feet[0].getWorldPosition(vec3).y>(robot.position.y-robotScale) && !step)
 			{
 					for(var i =0; i<8; i++)
 					{
@@ -902,9 +920,7 @@ render();*/
 			upLegsObject[legId].rotateZ((spasmCounter/Math.abs(spasmCounter))*0.1);
 			spasmCounter+=2;
 			if(spasmCounter==7)
-			{
 				legIsDoingSpasm=false;
-			}
 		}
 	}
 	
@@ -1232,7 +1248,11 @@ render();*/
 					if (tabletReuse[saveIndex])
 						tabletActivation[saveIndex]=!tabletActivation[saveIndex];
 					else
+					{
 						tabletActivation[saveIndex]=true;
+						console.log(saveIndex);
+
+					}
 			    }
 			}
 			else if(counter3<120)
@@ -1251,7 +1271,7 @@ render();*/
 				counter3++;
 
 			}
-			else if (feet[5].getWorldPosition(vec3).y >0)
+			else if (feet[5].getWorldPosition(vec3).y >(robot.position.y-robotScale))
 			{
 				upLegsObject[5].rotateZ(0.015);
 				upLegsObject[6].rotateZ(0.015);
@@ -1277,14 +1297,17 @@ render();*/
 				if (velocityDir!=0)
 					transitions=1;
 				
-				robotSelfAnimation();
+				if(	!torchIsOn )
+					robotSelfAnimation();
+				else
+				    moveTorchlight();
 				
 				for(i=0; i< tabletPositions.length; i++)
 					if (Math.abs(tabletPositions[i]-robot.position.x)<2)
 					{
-						//console.log("press E to interact, nTablet="+i + " , tabletPosition=" + tabletPositions[i]);
+						console.log("press F to interact, nTablet="+i + " , tabletPosition=" + tabletPositions[i]);
 						
-						if (keyboard.pressed("E") & (!tabletActivation[i] | tabletReuse[i]))
+						if (keyboard.pressed("F") & (!tabletActivation[i] | tabletReuse[i]))
 						{
 							saveIndex=i;
 							stepsize=(Math.abs(robot.position.x-tabletPositions[i])/8);
@@ -1297,7 +1320,11 @@ render();*/
 				break;
 			case 1:
 				legStep();
-				robotSelfAnimation();
+				if(	!torchIsOn )
+					robotSelfAnimation();
+				else
+				    moveTorchlight();
+				
 				break;
 			case 2:
 				if (Math.abs(robot.position.x-tabletPositions[saveIndex])>0.3 & !robotIsMoving)
@@ -1374,6 +1401,39 @@ render();*/
 		
 	}
 	
+	function turnTorchlight()
+	{
+		if(keyboard.pressed("T"))
+		{
+			torchIsOn = true;
+			torchlight.intensity=0.7;
+			materialLight.emissiveIntensity=1;
+
+		}
+		else if(keyboard.pressed("Y"))
+		{
+			torchIsOn = false;
+			materialLight.emissiveIntensity=0;
+			torchlight.intensity=0.0;
+		}
+	}
+	
+	function moveTorchlight()
+	{
+		headTime=0;
+		
+		headAtPoint(0, true);
+		
+		if(keyboard.pressed("Q"))
+		{
+			headObject.rotateY(0.1)
+		}
+		else if(keyboard.pressed("E"))
+		{
+			headObject.rotateY(-0.1)
+		}
+	}
+	
 	//Animation of the robot
 	function robotAnimation() {
 
@@ -1386,7 +1446,7 @@ render();*/
 			else if (transformation==2)
 				transformation = 3;
 		}
-		
+				
 		//intro
 		if(intro2 & !spyderMode)
 			ballToLegsTransformation(true);
@@ -1450,6 +1510,8 @@ render();*/
 				break;
 		}
 		
+		turnTorchlight();
+
 		if(keyboard.pressed("Z") & keyboard.pressed("X"))
 			robot.translateX(-4);
 		if(keyboard.pressed("C") & keyboard.pressed("V"))
@@ -2105,6 +2167,8 @@ Mesh1.position.set(3,3,3);
 	}
 	
 	var lift;
+	var doorLift1;
+	var doorLift2;
 	var tabletLift;
 	//CREATE A CIRCULAR ROOM
 	function createCircleRoom(column,num)
@@ -2122,6 +2186,14 @@ Mesh1.position.set(3,3,3);
 		floorObject.position.y=0.05;
 		circleRoom.add(floorObject)
 		
+		doorLift1 = createObject(new THREE.BoxGeometry(radius/2+1,1,radius+1),  new CANNON.Box(new CANNON.Vec3(radius/4+0.5,0.5,radius/2+0.5)));
+		doorLift1.position.set(radius-5,-1,0);
+		circleRoom.add(doorLift1);
+		
+		doorLift2 = createObject(new THREE.BoxGeometry(radius/2+1,1,radius+1),  new CANNON.Box(new CANNON.Vec3(radius/4+0.5,0.5,radius/2+0.5)));
+		doorLift2.position.set(-radius+5,-1,0);
+		circleRoom.add(doorLift2);
+			
 		lift = createObject(new THREE.CircleGeometry(radius/2,numOfSegments), null);
 		lift.rotation.set(-Math.PI/2,0,0);
 		lift.position.y=0.05;
@@ -2143,7 +2215,7 @@ Mesh1.position.set(3,3,3);
 		}
 		
 		//ceiling
-		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)), true);
+		var ceilingObject = createObject(new THREE.CircleGeometry(radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)));
 		ceilingObject.rotation.set(Math.PI/2,0,0);
 		ceilingObject.position.y=roomHeight-0.05;
 
@@ -2261,7 +2333,7 @@ Mesh1.position.set(3,3,3);
 		objects.add(capsule1,capsule2, capsule3);
 		
 		scene.add(objects);
-		tabletPositions.push(tablet.position.x+objects.position.x);
+		tabletPositions.push(tablet.getWorldPosition(vec3).x+objects.position.x);
 
 		return objects;
 	}
@@ -2281,9 +2353,23 @@ Mesh1.position.set(3,3,3);
 		for(c=0; c<4; c++)
 		{
 			var longTablet = createLongTablet();
-			longTablet.position.set(-20+c*10,baseHeight,-17)
+			longTablet.position.set(-20+c*10,baseHeight,-15)
 			objects.add(longTablet);
 		}
+		
+		for(i=0; i<6; i++)
+			for(j=0; j<14; j++)
+			{
+				var box = createObject(new THREE.BoxGeometry( 2.5, 1.7, 0.5 ), new CANNON.Box ( new CANNON.Vec3(0,0,0)) );
+				box.position.set(j*3.9-26, i*3-1.9, -17);
+			}
+		var bricks = mergeLastFixedObjects(60);
+		objects.add(bricks);
+		
+		var glass= createObject(new THREE.BoxGeometry( 60, 12.5, 1 ), new CANNON.Box ( new CANNON.Vec3(30,6.25,0.5)), 0, materialGlass );
+		glass.position.set(-1,8.6,-17);
+		
+		objects.add(glass);
 		
 		var boxAtWall = createBoxAtWall();
 		boxAtWall.position.set(-29,0,-8);
@@ -2362,7 +2448,7 @@ Mesh1.position.set(3,3,3);
 		objects.position.x=240;
 		scene.add(objects);
 
-		tabletPositions.push(tablet.position.x+objects.position.x);
+		tabletPositions.push(tablet.getWorldPosition(vec3).x+objects.position.x);
 		return objects;
 	}
 	
@@ -2393,8 +2479,8 @@ Mesh1.position.set(3,3,3);
 		objects.position.x=300;
 		scene.add(objects);
 
-		tabletPositions.push(tablet1.position.x+objects.position.x);
-		tabletPositions.push(tablet2.position.x+objects.position.x);
+		tabletPositions.push(tablet1.getWorldPosition(vec3).x+objects.position.x);
+		tabletPositions.push(tablet2.getWorldPosition(vec3).x+objects.position.x);
 		tabletReuse[2]=true;
 		tabletReuse[3]=true;
 		
@@ -2428,8 +2514,8 @@ Mesh1.position.set(3,3,3);
 		objects.position.x=360;
 		scene.add(objects);
 
-		tabletPositions.push(tablet1.position.x+objects.position.x);
-		tabletPositions.push(tablet2.position.x+objects.position.x);
+		tabletPositions.push(tablet1.getWorldPosition(vec3).x+objects.position.x);
+		tabletPositions.push(tablet2.getWorldPosition(vec3).x+objects.position.x);
 		tabletReuse[4]=true;
 		tabletReuse[5]=true;
 		
@@ -2490,11 +2576,11 @@ Mesh1.position.set(3,3,3);
 		box9.position.set(-12, 7.5, -5);
 		objects.add(box9);
 		
-		tabletPositions.push(tablet.position.x+objects.position.x);
 		
 		objects.position.x=420;
 		scene.add(objects);
 
+		tabletPositions.push(tablet.getWorldPosition(vec3).x+objects.position.x);
 		return objects;
 	}
 	
@@ -2682,7 +2768,7 @@ function backgroundMusic(){
 						{
 							var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
 							bodies[bodies.length-1].position.set(containers[j].getWorldPosition(vec3).x,5,-12);
-							bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
+							bodies[bodies.length-1].velocity.set(5*(Math.random()-0.5),5*(Math.random()-0.5),5*(Math.random()-0.5));
 							bodies[bodies.length-1].linearDamping = 0.0;
 							bodies[bodies.length-1].angularDamping = 0.0;
 							world.addBody(bodies[bodies.length-1]);
@@ -2692,14 +2778,14 @@ function backgroundMusic(){
 			}
 			
 
-		if(currentRoom==3 & !containerFlag2)
+		if(currentRoom==4 & !containerFlag2)
 			{	
 				for(var j=0; j<2; j++)
 					for(var i=0; i<50; i++)
 					{
 						var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
 						bodies[bodies.length-1].position.set(containers[j].getWorldPosition(vec3).x,5,-12);
-						bodies[bodies.length-1].velocity.set(10*(Math.random()-0.5),10*(Math.random()-0.5),10*(Math.random()-0.5));
+						bodies[bodies.length-1].velocity.set(5*(Math.random()-0.5),5*(Math.random()-0.5),5*(Math.random()-0.5));
 						bodies[bodies.length-1].linearDamping = 0.0;
 						bodies[bodies.length-1].angularDamping = 0.0;
 						world.addBody(bodies[bodies.length-1]);
@@ -2711,7 +2797,6 @@ function backgroundMusic(){
 	}
 	function doorsAnimation()
 	{
-		console.log(tabletActivation[0]);
 		//doors of rooms animation
 		if (roomHasBackDoor[currentRoom+1] & tabletActivation[0])
 		{
@@ -2731,20 +2816,20 @@ function backgroundMusic(){
 					{	
 						var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
 						//console.log(containers[j].getWorldPosition(vec3))
-						bodies[bodies.length-1].position.set(275+(2.2*i),6.5,-1.5);
-						bodies[bodies.length-1].velocity.set(-20,2*(Math.random()-0.5),2*(Math.random()-0.5));
+						bodies[bodies.length-1].position.set(280+(2.2*i),8,0.7);
+						bodies[bodies.length-1].velocity.set(-25,2*(Math.random()-0.5),2*(Math.random()-0.5));
 						bodies[bodies.length-1].angularVelocity.set(-1,1,0.1);
-						bodies[bodies.length-1].linearDamping = 5.0;
-						bodies[bodies.length-1].angularDamping = 5.0;
+						bodies[bodies.length-1].linearDamping = 0.0;
+						bodies[bodies.length-1].angularDamping = 0.0;
 						world.addBody(bodies[bodies.length-1]);
 						scene.add(testMesh);
 					}
-					for(var i=0; i<7; i++)
+					for(var i=0; i<5; i++)
 					{	
 						var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
-						bodies[bodies.length-1].position.set(275+(2.2*i),6,1.5);
+						bodies[bodies.length-1].position.set(280+(2.2*i),5,-0.7);
 						bodies[bodies.length-1].velocity.set(-20,2*(Math.random()-0.5),2*(Math.random()-0.5));
-						bodies[bodies.length-1].angularVelocity.set(-1,1,0.1);
+						bodies[bodies.length-1].angularVelocity.set(1,-1,0.1);
 						bodies[bodies.length-1].linearDamping = 0.0;
 						bodies[bodies.length-1].angularDamping = 0.0;
 						world.addBody(bodies[bodies.length-1]);
@@ -2855,12 +2940,18 @@ function backgroundMusic(){
 	
 	function liftAnimation()
 	{
-		if(tabletActivation[1] & robot.position.y>-10)
+		if(tabletActivation[1] & robot.position.y>-6)
 		{
 			lift.translateZ(-0.05);
 			robot.translateY(-0.05);
 			tabletLift.translateY(-0.05);
 		}
+		if(tabletActivation[1] & doorLift1.position.x>8.2)
+		{
+			doorLift1.translateX(-0.05)
+			doorLift2.translateX(0.05)
+		}
+		
 		
 	}
 	
@@ -2889,7 +2980,7 @@ function backgroundMusic(){
 			world.gravity.set(0,0,-100);
 		
 		//test for physic boxes
-		if(keyboard.pressed("F"))
+		if(keyboard.pressed("G"))
 		{
 			for(var j=0; j<containers.length; j++)
 				for(var i=0; i<50; i++)
