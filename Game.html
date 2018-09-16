@@ -2023,8 +2023,9 @@ Mesh1.position.set(3,3,3);
 		
 		escapePod.add(motor1,motor2);
 		
-		propulsorLight = new THREE.PointLight( 0xff0000, 0, 60, 1 );
+		propulsorLight = new THREE.PointLight( 0xff0000, 0, 500, 0.15 );
 		propulsorLight.position.y=2.5;
+		propulsorLight.position.z=1;
 		propulsor.add(propulsorLight);
 		return escapePod;
 	}
@@ -2255,10 +2256,10 @@ Mesh1.position.set(3,3,3);
 		var wall4EXT = createObject(new THREE.BoxGeometry(2,roomHeight/2,roomDepth),	new CANNON.Box(new CANNON.Vec3(1,roomHeight/4,roomDepth/2)));;
 		wall4EXT.position.set(-roomWidth/2,roomHeight*0.75,roomDepth*1.5);
 		
-		var wallDownEXT = createObject(new THREE.BoxGeometry(roomWidth,roomHeight*2,roomDepth*2),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomHeight/2,roomDepth)));;
+		var wallDownEXT = createObject(new THREE.BoxGeometry(roomWidth+2,roomHeight*2,roomDepth*2),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomHeight/2,roomDepth)));;
 		wallDownEXT.position.set(0,-roomHeight,0);
-		var wallUpEXT = createObject(new THREE.BoxGeometry(roomWidth,roomHeight*2,roomDepth*2),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomHeight/2,roomDepth)));;
-		wallUpEXT.position.set(0,roomHeight*2+roomHeight/2,0);
+		var wallUpEXT = createObject(new THREE.BoxGeometry(roomWidth+2,roomHeight*2,roomDepth*2),	new CANNON.Box(new CANNON.Vec3(roomWidth/2,roomHeight/2,roomDepth)));;
+		wallUpEXT.position.set(0,roomHeight*2,0);
 		
 		var wallEXT = mergeLastFixedObjects(6);
 		//wallEXT.position.z=-roomDepth;
@@ -2725,9 +2726,9 @@ Mesh1.position.set(3,3,3);
 		return objects;
 	}
 	
-	//::::::::::::::::::::::ROOM9:::::::::::::::::::::://
+	//::::::::::::::::::::::ROOM10:::::::::::::::::::::://
 	
-	function createObjectForRoom9()
+	function createObjectForRoom10()
 	{
 		var objects = new THREE.Group();
 		
@@ -2735,7 +2736,7 @@ Mesh1.position.set(3,3,3);
 		tablet.position.set(23,0,-5.3)
 		objects.add(tablet);
 		
-		objects.position.x=540;
+		objects.position.x=600;
 		scene.add(objects);
 
 		tabletPositions.push(tablet.getWorldPosition(vec3).x+objects.position.x);
@@ -2886,7 +2887,7 @@ function backgroundMusic(){
 	roomsObjects[6]=createObjectForRoom6();
 	roomsObjects[7]=createObjectForRoom7();
 	roomsObjects[8]=createObjectForRoom8();
-	roomsObjects[9]=createObjectForRoom9();
+	roomsObjects[10]=createObjectForRoom10();
 	
 	//create the edge
 	var bound = createObject(new THREE.BoxBufferGeometry( 0.01, 0.01, 0.01 ), new CANNON.Box ( new CANNON.Vec3(rooms.length*60,15,0.005)) );
@@ -3076,7 +3077,7 @@ function backgroundMusic(){
 		{
 			if(counterEscapePod < 200)
 			{
-				propulsorLight.intensity += 0.03;
+				propulsorLight.intensity += 0.01;
 				propulsorMaterial1.emissiveIntensity += 0.002;
 				propulsorMaterial2.emissiveIntensity += 0.002;
 			}
@@ -3085,9 +3086,11 @@ function backgroundMusic(){
 				deltaRot = ((counterEscapePod-200)*(counterEscapePod-200))/50000
 				motor1.rotateZ(deltaRot)
 				motor2.rotateZ(-deltaRot)
+			
 			}
 			else if(counterEscapePod <520)
 			{	
+				
 				escapePod.translateZ(-delta)
 				delta= ((counterEscapePod-300)*(counterEscapePod-300))/10000
 				motor1.rotateZ(deltaRot)
@@ -3095,7 +3098,12 @@ function backgroundMusic(){
 			}
 			else if(counterEscapePod <1450)
 			{
-				
+				if(propulsorLight.intensity>0.6)
+				{
+					propulsorLight.intensity = propulsorLight.intensity/1.01 ;
+					propulsorMaterial1.emissiveIntensity = propulsorMaterial1.emissiveIntensity/1.005 ;
+					propulsorMaterial2.emissiveIntensity = propulsorMaterial2.emissiveIntensity/1.005 ;
+				}
 				rotationY += -0.0001;
 				rotationX += 0.0001;
 				motor1.rotateZ(deltaRot)
@@ -3107,12 +3115,7 @@ function backgroundMusic(){
 				escapePod.rotateY(-0.0001)
 				escapePod.rotateX(0.0001)
 				
-				if(propulsorLight.intensity>0.2)
-				{
-					propulsorLight.intensity = propulsorLight.intensity/1.0 ;
-					propulsorMaterial1.emissiveIntensity = propulsorMaterial1.emissiveIntensity/1.01 ;
-					propulsorMaterial2.emissiveIntensity = propulsorMaterial2.emissiveIntensity/1.01 ;
-				}
+				
 			}
 			else if(counterEscapePod <3000)
 			{
