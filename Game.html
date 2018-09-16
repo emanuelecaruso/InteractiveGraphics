@@ -2750,7 +2750,7 @@ Mesh1.position.set(3,3,3);
 	function roomLight(intermittent=false)
 	{
 		var tubeGeometry = new THREE.CylinderBufferGeometry( 0.2, 0.2, 30 );
-		tubeLight = new THREE.PointLight( 0x6699ff, 0.7, 40, 0.9 );
+		tubeLight = new THREE.PointLight( 0x6699ff, 0.7, 40, 0.85 );
 		
 		if(intermittent)
 			var lightTube = new THREE.Mesh( tubeGeometry, lightIntermittentMaterial);
@@ -3129,7 +3129,7 @@ function backgroundMusic(){
 			else
 				scene.remove(escapePod);
 			
-			if(gateEscapePod1.position.y>22.5 & counterEscapePod >300)
+			if(gateEscapePod1.position.y>22.5 & counterEscapePod >400)
 				{
 					gateEscapePod1.translateY(-0.1);
 					gateEscapePod2.translateY(+0.1);
