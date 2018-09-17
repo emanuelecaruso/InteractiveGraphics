@@ -2353,17 +2353,17 @@ Mesh1.position.set(3,3,3);
 
 		for(i=3; i<numOfSegments-3; i++)
 		{
-			var wallPieces2=createWall((radius*Math.PI)/numOfSegments,roomHeight/2);
+			var wallPieces2=createWall((radius*Math.PI)/numOfSegments,roomHeight/3);
 			wallPieces2.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces2.translateZ(-radius+((roomHeight/3)*0.5));
 			wallPieces2.lookAt(0,roomHeight/1.5,0);
-			wallPieces2.position.y=roomHeight/6;
+			wallPieces2.position.y=roomHeight/7;
 			
-			var wallPieces3=createWall((radius*Math.PI)/numOfSegments,roomHeight/2);
+			var wallPieces3=createWall((radius*Math.PI)/numOfSegments,roomHeight/3);
 			wallPieces3.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces3.translateZ(-radius+((roomHeight/3)*0.5));
 			wallPieces3.lookAt(0,-roomHeight/1.5,0);
-			wallPieces3.position.y=roomHeight-roomHeight/6;
+			wallPieces3.position.y=roomHeight-roomHeight/7;
 		}
 		
 		for(i=4; i<numOfSegments-4; i++)
@@ -2371,12 +2371,12 @@ Mesh1.position.set(3,3,3);
 			var wallPieces4= createObject(new THREE.BoxGeometry((radius*Math.PI)/numOfSegments,1,2),  new CANNON.Box(new CANNON.Vec3((radius*Math.PI)/(numOfSegments*2),1/2,2/2)));
 			wallPieces4.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces4.translateZ(-radius);
-			wallPieces4.position.y=roomHeight/3+1;
+			wallPieces4.position.y=roomHeight/4+1;
 			
 			var wallPieces5= createObject(new THREE.BoxGeometry((radius*Math.PI)/numOfSegments,1,2),  new CANNON.Box(new CANNON.Vec3((radius*Math.PI)/(numOfSegments*2),1/2,2/2)));
 			wallPieces5.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces5.translateZ(-radius);
-			wallPieces5.position.y=roomHeight-roomHeight/3-1;	
+			wallPieces5.position.y=roomHeight-roomHeight/4-1;	
 		}
 		
 		//ceiling
@@ -2775,11 +2775,13 @@ Mesh1.position.set(3,3,3);
 		var objects = new THREE.Group();
 		
 		var longTablet1 = createLongTablet();
-		longTablet1.position.set(-22,0,-15);
+		longTablet1.position.set(-22,0,-10);
+		longTablet1.rotation.y=Math.PI/4;
 		objects.add(longTablet1);
 		
 		var longTablet2 = createLongTablet();
-		longTablet2.position.set(-2,0,-15);
+		longTablet2.position.set(-2,0,-10);
+		longTablet2.rotation.y=-Math.PI/4;
 		objects.add(longTablet2);
 		
 		var controlStation = createControlStation();
