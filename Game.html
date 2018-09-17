@@ -2312,11 +2312,11 @@ Mesh1.position.set(3,3,3);
 		var circleRoom = new THREE.Group();
 	
 		var numOfSegments = 32;
-		var radius = 31.7;
+		var radius = 31.5;
 		var roomHeight = 30;
 		
 		//floor circle
-		var floorObject = createObject(new THREE.RingGeometry(radius/2,radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)));
+		var floorObject = createObject(new THREE.RingGeometry(radius/4,radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)));
 		floorObject.rotation.set(-Math.PI/2,0,0);
 		floorObject.position.y=0.05;
 		circleRoom.add(floorObject)
@@ -2329,12 +2329,12 @@ Mesh1.position.set(3,3,3);
 		doorLift2.position.set(-radius+5,-1,0);
 		circleRoom.add(doorLift2);
 			
-		lift = createObject(new THREE.CircleGeometry(radius/2,numOfSegments), null);
+		lift = createObject(new THREE.CircleGeometry(radius/4,numOfSegments), null);
 		lift.rotation.set(-Math.PI/2,0,0);
 		lift.position.y=0.05;
 		circleRoom.add(lift);
 		
-		var tube = createObject(new THREE.CylinderGeometry(radius/2,radius/2,15,numOfSegments,1,true), null,0, materialStandardBackSide);
+		var tube = createObject(new THREE.CylinderGeometry(radius/4,radius/4,15,numOfSegments,1,true), null,0, materialStandardBackSide);
 		tube.position.y=-7.45;
 		//scene.add(tube)
 		circleRoom.add(tube);
@@ -2364,7 +2364,10 @@ Mesh1.position.set(3,3,3);
 			wallPieces3.translateZ(-radius+((roomHeight/3)*0.5));
 			wallPieces3.lookAt(0,-roomHeight/1.5,0);
 			wallPieces3.position.y=roomHeight-roomHeight/6;
-			
+		}
+		
+		for(i=4; i<numOfSegments-4; i++)
+		{
 			var wallPieces4= createObject(new THREE.BoxGeometry((radius*Math.PI)/numOfSegments,1,2),  new CANNON.Box(new CANNON.Vec3((radius*Math.PI)/(numOfSegments*2),1/2,2/2)));
 			wallPieces4.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces4.translateZ(-radius);
@@ -2373,8 +2376,7 @@ Mesh1.position.set(3,3,3);
 			var wallPieces5= createObject(new THREE.BoxGeometry((radius*Math.PI)/numOfSegments,1,2),  new CANNON.Box(new CANNON.Vec3((radius*Math.PI)/(numOfSegments*2),1/2,2/2)));
 			wallPieces5.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
 			wallPieces5.translateZ(-radius);
-			wallPieces5.position.y=roomHeight-roomHeight/3-1;
-			
+			wallPieces5.position.y=roomHeight-roomHeight/3-1;	
 		}
 		
 		//ceiling
@@ -2383,7 +2385,7 @@ Mesh1.position.set(3,3,3);
 		ceilingObject.position.y=roomHeight-0.05;
 		
 		//wall for door
-		var someStructureObjects2= mergeLastFixedObjects(105);
+		var someStructureObjects2= mergeLastFixedObjects(101);
 
 		var wallForDoorGroup = createWallForDoor(39,roomHeight);
 		wallForDoorGroup.position.x=radius-2;
@@ -2559,12 +2561,8 @@ Mesh1.position.set(3,3,3);
 	{
 		var objects = new THREE.Group();
 		
-		planetHolo = createObject(new THREE.SphereGeometry(2, 8, 8),  new CANNON.Sphere(2), 10);
-		bodies[bodies.length-1].position.set(150, 7.5, -12.2);
-		planetHolo.position.set(bodies[bodies.length-1].position);
-		bodies[bodies.length-1].angularVelocity.set(0,1,0);
-		bodies[bodies.length-1].angularDamping = 0.0;
-		world.addBody(bodies[bodies.length-1]);
+		planetHolo = createObject(new THREE.SphereGeometry(2, 8, 8),  null);
+		planetHolo.position.set(150, 7.5, -12.2);
 		scene.add(planetHolo);
 		
 		var columnDown = createObject(new THREE.CylinderGeometry( 4.2, 4.2, 3, 5 ), new CANNON.Cylinder(4.2, 4.2, 3, 5));
@@ -2757,8 +2755,12 @@ Mesh1.position.set(3,3,3);
 		var objects = new THREE.Group();
 		
 		escapePod = createEscapePod() ;
-		escapePod.position.set(0,0,-80);
+		escapePod.position.set(0,0.5,-80);
 		objects.add(escapePod);
+		
+		var track = createObject(new THREE.BoxGeometry( 30, 1, 65 ), null );
+		track.position.set(0, 0, -65);
+		objects.add(track);
 		
 		objects.position.x=480;
 		scene.add(objects);
@@ -2771,6 +2773,18 @@ Mesh1.position.set(3,3,3);
 	function createObjectForRoom10()
 	{
 		var objects = new THREE.Group();
+		
+		var longTablet1 = createLongTablet();
+		longTablet1.position.set(-22,0,-15);
+		objects.add(longTablet1);
+		
+		var longTablet2 = createLongTablet();
+		longTablet2.position.set(-2,0,-15);
+		objects.add(longTablet2);
+		
+		var controlStation = createControlStation();
+		controlStation.position.set(-12,0,-15);
+		objects.add(controlStation);
 		
 		var tablet = createTablet();
 		tablet.position.set(23,0,-5.3)
@@ -3283,6 +3297,7 @@ function backgroundMusic(){
 					lift.position.y=0.05;
 					robotStop=false;
 					liftIsOn=false;
+					scene.remove(escapePod);
 				}
 			}
 		}
