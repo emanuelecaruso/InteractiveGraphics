@@ -163,6 +163,30 @@ function loop(){
 
 loop();
 
+//------------------MATERIALS-------------------------
+
+var materialStandard = new THREE.MeshPhongMaterial();
+//materialStandard.roughness = 0.7;
+//materialStandard.metalness =  0.3;
+//materialStandard.reflectivity = 1;
+
+var materialStandardBackSide = new THREE.MeshPhongMaterial( {side: THREE.BackSide} );
+//materialStandardBackSide.roughness = 0.7;
+//materialStandardBackSide.metalness =  0.3;
+//materialStandardBackSide.reflectivity = 1;
+
+var materialGlass = new THREE.MeshPhongMaterial();
+materialGlass.transparent=true;
+//materialGlass.roughness = 0.7;
+//materialGlass.metalness =  0.3;
+//materialGlass.reflectivity = 1;
+materialGlass.opacity = 0.2;
+
+var materialLight  = new THREE.MeshLambertMaterial( {
+emissive: 0xffffff,
+emissiveIntensity: 0,
+color: 0xffffff
+});	
 
 //--------------------INTRO----------------------//
 var intro = true;
@@ -200,12 +224,14 @@ function createLabel(text, x, y, z, size, color, planeX, planeY) {
 
 	var texture = new THREE.Texture(canvas);
 	texture.needsUpdate = true;
+	
 	var material = new THREE.MeshBasicMaterial({
 		map : texture
 	});
+	
 	material.transparent = true;
 	var mesh = new THREE.Mesh(PlaneText, material);
-	mesh.overdraw = true;
+	//mesh.overdraw = true;
 	
 	mesh.position.x = x;
 	mesh.position.y = y;
@@ -226,13 +252,25 @@ mesh2.rotation.y = 0;
 mesh2.rotation.x = -Math.PI/2 ;
 scene.add(mesh2);*/
 
-mesh3 = createLabel("Press F", 23, 8, -5.5, 20, "white", 20, 10);
-mesh3.rotation.y = 0;
-mesh3.rotation.x = 0 ;
-scene.add(mesh3);
+label1 = createLabel("Use A and D to move the robot", 0, 1.5, -3.5, 15, "white", 2, 1);
+label1.material.opacity = 0;
+label1.material.transparent = true;
+camera.add(label1);
+	
+label2 = createLabel("Press F to interact", 23, 8, -5.5, 15, "white", 20, 10);
+label2.material.opacity = 0;
+label2.material.transparent = true;
+	
+label3 = createLabel("It's not the right moment", 240, 8, -5.5, 15, "white", 20, 10);
+label3.material.opacity = 0;
+label3.material.transparent = true;
+label3.material.depthWrite=false;
 
-
-
+label4 = createLabel("Use T and Y to turn On and Off the torchlight", 0, 1.5, -3.5, 15, "white", 2, 1);
+label4.material.opacity = 0;
+label4.material.transparent = true;
+label4.material.depthWrite=false;
+var labelOn = false;
 //-----------------------------INTERSECTIONS-------------------------//
 
 // when the mouse moves, call the given function
@@ -324,31 +362,6 @@ function onDocumentMouseDown( event ) {
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
 	}
 
-
-	//------------------MATERIALS-------------------------
-	
-	var materialStandard = new THREE.MeshPhongMaterial();
-	//materialStandard.roughness = 0.7;
-	//materialStandard.metalness =  0.3;
-	//materialStandard.reflectivity = 1;
-	
-	var materialStandardBackSide = new THREE.MeshPhongMaterial( {side: THREE.BackSide} );
-	//materialStandardBackSide.roughness = 0.7;
-	//materialStandardBackSide.metalness =  0.3;
-	//materialStandardBackSide.reflectivity = 1;
-	
-	var materialGlass = new THREE.MeshPhongMaterial();
-	materialGlass.transparent=true;
-	//materialGlass.roughness = 0.7;
-	//materialGlass.metalness =  0.3;
-	//materialGlass.reflectivity = 1;
-	materialGlass.opacity = 0.2;
-	
-	var materialLight  = new THREE.MeshLambertMaterial( {
-	emissive: 0xffffff,
-	emissiveIntensity: 0,
-	color: 0xffffff
-	});	
 	//------------------------------------------------------
 
 	function createObject(meshgeom,shape,mass=0, material=materialStandard) {
@@ -666,6 +679,8 @@ render();*/
 	var intermittentFlag = false;
 	var intermittentCounter;
 	
+	var gravityFlag = false;
+
 	var tabletActivation = new Array(7);
 	tabletActivation.fill(false);
 	tabletActivation[4]=true;
@@ -716,7 +731,7 @@ render();*/
 					velocityDir =1;
 				}
 			}
-			else if(keyboard.pressed("A") & robot.position.x>=-11)
+			else if(keyboard.pressed("A") & robot.position.x>=-13)
 			{
 				if (velocity>-maxvelocity)
 				{
@@ -775,7 +790,7 @@ render();*/
 				upLegsObject[i].rotateZ(-0.005*(Math.sin(3*spyderTime)));
 				knees[i].rotateZ(0.005*(Math.sin(3*spyderTime)));
 			}
-			spyderTime+=0.015;
+			spyderTime+=0.015
 			
 			if(!intro2)
 				legSpasm();
@@ -804,7 +819,7 @@ render();*/
 		{
 			robotStop=false;
 			rotator.position.y = 0.1*(Math.abs(velocity))*robotScale;
-			if(headObject.getWorldDirection().z>0)
+			if(headObject.getWorldDirection(vec3).z>0)
 				headObject.rotation.z = 0.3*velocity;
 			else
 				headObject.rotation.z = -0.3*velocity;
@@ -1341,6 +1356,8 @@ render();*/
 			
 		}
 		
+		if(torchIsOn & robotStop)
+			robotStop=false;
 		
 		switch(transitions)
 		{
@@ -1359,10 +1376,13 @@ render();*/
 						
 						if (keyboard.pressed("F") & (!tabletActivation[i] | tabletReuse[i]))
 						{
-							saveIndex=i;
-							stepsize=(Math.abs(robot.position.x-tabletPositions[i])/8);
-							robotIsInteractingWithTablet = true;
-							transitions = 2;
+							if(i!=1 | liftUsable)
+							{
+								saveIndex=i;
+								stepsize=(Math.abs(robot.position.x-tabletPositions[i])/8);
+								robotIsInteractingWithTablet = true;
+								transitions = 2;
+							}
 							
 						}
 					}
@@ -1443,7 +1463,7 @@ render();*/
 			transformation=0;
 			scene.remove(legs);
 			robot.remove(legs);
-			initializeLegs()
+			initializeLegs();
 		}
 		
 		
@@ -1489,8 +1509,7 @@ render();*/
 	//Animation of the robot
 	function robotAnimation() {
 		headTime += 0.015;
-		
-		if(keyboard.pressed("1"))
+		if(keyboard.pressed("1") & gravityFlag)
 		{
 			if(transformation==0)
 				transformation = 1;
@@ -1524,8 +1543,8 @@ render();*/
 		switch (transformation)
 		{
 			case 0:
-				velocityCalculation();
 				robotRoll();
+				velocityCalculation();
 				break;
 				
 			case 1:
@@ -1567,10 +1586,15 @@ render();*/
 		if(keyboard.pressed("Z") & keyboard.pressed("X"))
 			robot.translateX(-4);
 		if(keyboard.pressed("C") & keyboard.pressed("V"))
-		{
 			robot.translateX(4);
+		
+		if(keyboard.pressed("U") )
+		{
 			tabletActivation[0]=true;
 			tabletActivation[6]=true;
+			tabletActivation[7]=true;
+			gravityFlag=true;
+			liftUsable=true;
 		}
 			
 		// render using requestAnimationFrame
@@ -2350,6 +2374,7 @@ Mesh1.position.set(3,3,3);
 	var tabletLift;
 	var liftIsOn = false;
 	var liftCounter =0 ;
+	var liftUsable=false;
 	//CREATE A CIRCULAR ROOM
 	function createCircleRoom(column,num)
 	{
@@ -3297,6 +3322,112 @@ function backgroundMusic(){
 		}
 	}
 	
+	var labelCounter =0;
+	var labelChange = -1;
+	var labelChangePrevious = -1;
+	var labelChangeForActions = 0;
+	
+	function addLabel(label, onCamera=true)
+	{
+		if(onCamera)
+		{
+			camera.add(label);
+			scene.add(camera);
+		}
+		else
+			scene.add(label);
+
+		if (labelOn)
+		{
+			if(label.material.opacity<1)
+			{
+				label.material.opacity= labelCounter;
+				labelCounter += 0.03;
+			}
+		}
+		else
+		{
+			if(label.material.opacity>0)
+			{
+				label.material.opacity= labelCounter;
+				labelCounter += -0.03;
+			}
+		}
+	}
+	
+	function labelFunction()
+	{
+		//sequence of labels
+		if (!intro & !intro2 & labelChangePrevious==-1 & labelChange==-1)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChange = 0;
+		}
+		else if(robot.position.x>18 & labelChangePrevious==0 & labelChange==-1)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChange = 1;
+			scene.remove(label1);
+		}
+		
+		//labels for actions
+		if( Math.abs(robot.position.x-tabletPositions[1])<2 & keyboard.pressed("F") & labelChangeForActions==0 & !liftUsable)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChangeForActions = 1;
+		}
+			
+		 switch (labelChange)
+		 {
+			 case -1:
+				 break;
+				 
+			 case 0:
+				 addLabel(label1);
+				 if(robot.position.x>5)
+				 {
+					 labelOn= false;
+					 labelChangePrevious=0;
+				 }
+				 if(labelCounter<0)
+					 labelChange=-1;
+				 break;
+			
+			 case 1:
+				 addLabel(label2, false);
+				 if(tabletActivation[0])
+				 {
+					 labelOn= false;
+					 labelChangePrevious=1;
+				 }
+				 if(labelCounter<0)
+					 labelChange=-1;
+				 break;
+				 
+			 case 2:
+				 break;
+				 
+		 }
+		
+		if(labelChangeForActions==1)
+		{
+			addLabel(label3, false);
+			if(Math.abs(robot.position.x-240)>3)
+			{
+				labelOn= false;
+			}
+			if(labelCounter<0)
+				labelChangeForActions=0;
+		}
+		
+		
+			
+			
+	}
+	
 	var dampGravity =100;
 	var shipGravityRotation = false;
 	function liftAnimation()
@@ -3325,7 +3456,6 @@ function backgroundMusic(){
 			else if( liftCounter<400 & liftCounter<600)
 			{
 				world.gravity.set(0,-100+dampGravity,-dampGravity);
-				console.log(dampGravity);
 				liftCounter++
 
 			}
@@ -3333,13 +3463,13 @@ function backgroundMusic(){
 			{
 				world.gravity.set(0,-100+dampGravity,-dampGravity);
 				dampGravity=dampGravity-0.14;
-				console.log(dampGravity);
 				shipGravityRotation = true;
 				earthRotator.rotateX(-0.002);
 			}
 			else if( liftCounter<600)
 			{
 				liftCounter++
+				gravityFlag=true;
 			}
 			else 
 			{
@@ -3383,10 +3513,12 @@ function backgroundMusic(){
 		updateLightsIntermittent();
 		liftAnimation();
 		escapePodAnimation();
+		labelFunction();
 		updatePhysics();									//update the physic
-		director();											//a director which manage the camera
-		//optimization();
-		
+		director();										//a director which manage the camera
+		if(!intro)
+			optimization();
+
 		//test for gravity
 		if(keyboard.pressed("N"))
 			world.gravity.set(0,0,-100);
@@ -3593,13 +3725,6 @@ function backgroundMusic(){
 					//camera.rotation.x= camera.rotation.x/1.01;
 		}
 	}
-	/*
-	for(i=0; i<rooms.length; i++)	
-		{
-			if (roomsObjects[i] != null)
-				scene.remove(roomsObjects[i]);
-			scene.remove(rooms[i]);
-		}*/
 	
 	function optimization()
 	{
