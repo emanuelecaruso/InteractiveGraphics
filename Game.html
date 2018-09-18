@@ -266,10 +266,15 @@ label3.material.opacity = 0;
 label3.material.transparent = true;
 label3.material.depthWrite=false;
 
-label4 = createLabel("Use T and Y to turn On and Off the torchlight", 0, 1.5, -3.5, 15, "white", 2, 1);
+label4 = createLabel("Use T and Y to switch On and Off the torchlight", 0, 1.5, -3.5, 10.5, "white", 3, 1.5);
 label4.material.opacity = 0;
 label4.material.transparent = true;
 label4.material.depthWrite=false;
+	
+label5 = createLabel("Use Q and E to rotate the torchlight", 0, 1.5, -3.5, 11, "white", 3, 1.5);
+label5.material.opacity = 0;
+label5.material.transparent = true;
+label5.material.depthWrite=false;
 var labelOn = false;
 //-----------------------------INTERSECTIONS-------------------------//
 
@@ -1490,6 +1495,8 @@ render();*/
 		}
 	}
 	
+	var Qpressed = false;
+	var Epressed = false;
 	function moveTorchlight()
 	{
 		headTime=0;
@@ -1499,10 +1506,12 @@ render();*/
 		if(keyboard.pressed("Q"))
 		{
 			headObject.rotateY(0.1)
+			Qpressed=true;
 		}
 		else if(keyboard.pressed("E"))
 		{
 			headObject.rotateY(-0.1)
+			Epressed=true;
 		}
 	}
 	
@@ -3371,6 +3380,20 @@ function backgroundMusic(){
 			labelChange = 1;
 			scene.remove(label1);
 		}
+		else if(currentRoom==7 & labelChangePrevious==1 & labelChange==-1)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChange = 2;
+			scene.remove(label2);
+		}
+		else if(torchIsOn & labelChangePrevious==2 & labelChange==-1)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChange = 3;
+			scene.remove(label4);
+		}
 		
 		//labels for actions
 		if( Math.abs(robot.position.x-tabletPositions[1])<2 & keyboard.pressed("F") & labelChangeForActions==0 & !liftUsable)
@@ -3408,7 +3431,32 @@ function backgroundMusic(){
 				 break;
 				 
 			 case 2:
+				 addLabel(label4);
+				 if(torchIsOn)
+				 {
+					 labelOn= false;
+					 labelChangePrevious=2;
+				 }
+				 if(currentRoom==8)
+				 {
+					 labelOn= false;
+					 labelChangePrevious=3;
+				 }
+				 if(labelCounter<0)
+					 labelChange=-1;
 				 break;
+				 
+			 case 3:
+				 addLabel(label5);
+				 if((Epressed & Qpressed ) | currentRoom==8 )
+				 {
+					 labelOn= false;
+					 labelChangePrevious=5;
+				 }
+				 if(labelCounter<0)
+					 labelChange=-1;
+				 break;
+				 
 				 
 		 }
 		
@@ -3469,7 +3517,6 @@ function backgroundMusic(){
 			else if( liftCounter<600)
 			{
 				liftCounter++
-				gravityFlag=true;
 			}
 			else 
 			{
@@ -3491,6 +3538,7 @@ function backgroundMusic(){
 					lift.position.y=0.05;
 					robotStop=false;
 					liftIsOn=false;
+					gravityFlag=true;
 					scene.remove(escapePod);
 				}
 			}
