@@ -11,6 +11,7 @@
 	<script type="text/javascript" src="./libs/KeyboardState.js"></script>
     <script type="text/javascript" src="./libs/dat.gui.min.js"></script>
     <script type="text/javascript" src="libs/Projector.js"></script>
+	
     <!-- <script type="text/javascript" src="./libs/Detector.js"></script> -->
 
 	
@@ -112,10 +113,6 @@
 	document.body.appendChild( webGLRenderer.domElement );
 	console.log(webGLRenderer);
 	
-	
-//------------------------------------------------------------------------------------------//
-
-
 
 //----------------------------------------GUI-----------------------------------//
 
@@ -180,13 +177,23 @@ materialGlass.transparent=true;
 //materialGlass.roughness = 0.7;
 //materialGlass.metalness =  0.3;
 //materialGlass.reflectivity = 1;
-materialGlass.opacity = 0.2;
+materialGlass.opacity = 0.3;
 
 var materialLight  = new THREE.MeshLambertMaterial( {
 emissive: 0xffffff,
 emissiveIntensity: 0,
 color: 0xffffff
 });	
+
+	
+//------------------------------------------------------------------------------------------//
+
+</script>
+	
+    <script type="text/javascript" src="./mazeMiniGame.js"></script>
+<p>introduce "maze" object, and animate that</p>
+
+<script type="text/javascript">	
 
 //--------------------INTRO----------------------//
 var intro = true;
@@ -257,24 +264,52 @@ label1.material.opacity = 0;
 label1.material.transparent = true;
 camera.add(label1);
 	
-label2 = createLabel("Press F to interact", 23, 8, -5.5, 15, "white", 20, 10);
+label2 = createLabel("Press F to interact", 23, 8, -5.5, 15, "white", 15, 7.5);
 label2.material.opacity = 0;
 label2.material.transparent = true;
 	
-label3 = createLabel("It's not the right moment", 240, 8, -5.5, 15, "white", 20, 10);
+label3 = createLabel("It's not the right moment", 240, 8, -5.5, 15, "white", 15, 7.5);
 label3.material.opacity = 0;
 label3.material.transparent = true;
 label3.material.depthWrite=false;
 
-label4 = createLabel("Use T and Y to switch On and Off the torchlight", 0, 1.5, -3.5, 10.5, "white", 3, 1.5);
+label4 = createLabel("Use T and Y to switch", -0.7, 1.5, -3.5, 15, "white", 2, 1);
 label4.material.opacity = 0;
 label4.material.transparent = true;
 label4.material.depthWrite=false;
+label4EXT = createLabel("On and Off the torch", 1.3, 0, 0, 15, "white", 2, 1);
+label4EXT.material.opacity = 0;
+label4EXT.material.transparent = true;
+label4EXT.material.depthWrite=false;
+label4.add(label4EXT);
 	
-label5 = createLabel("Use Q and E to rotate the torchlight", 0, 1.5, -3.5, 11, "white", 3, 1.5);
+label5 = createLabel("Use Q and E to", -0.5, 1.5, -3.5, 15, "white", 2, 1);
 label5.material.opacity = 0;
 label5.material.transparent = true;
 label5.material.depthWrite=false;
+label5EXT = createLabel("rotate the torch", 0.933, 0, 0, 15, "white", 2, 1);
+label5EXT.material.opacity = 0;
+label5EXT.material.transparent = true;
+label5EXT.material.depthWrite=false;
+//label5EXT.position.y=0;
+label5.add(label5EXT);
+	
+	
+label6 = createLabel("Now, you can switch between", -0.95, 1.5, -3.5, 15, "white", 2, 1);
+label6.material.opacity = 0;
+label6.material.transparent = true;
+label6.material.depthWrite=false;
+label6EXT1 = createLabel("spider-mode and rolling-mode", 1.785, 0, 0, 15, "white", 2, 1);
+label6EXT1.material.opacity = 0;
+label6EXT1.material.transparent = true;
+label6EXT1.material.depthWrite=false;
+label6.add(label6EXT1);
+label6EXT2 = createLabel("pressing 1", 0.95, -0.15, 0, 15, "white", 2, 1);
+label6EXT2.material.opacity = 0;
+label6EXT2.material.transparent = true;
+label6EXT2.material.depthWrite=false;
+label6.add(label6EXT2);
+	
 var labelOn = false;
 //-----------------------------INTERSECTIONS-------------------------//
 
@@ -313,7 +348,7 @@ function onDocumentMouseDown( event ) {
 
 		intersects[ i ].object.material.color.set( 0xfff000 );
 		scene.remove(mesh);
-		//backgroundMusic();
+		backgroundMusic();
 		doorOpen = true;
 		
 		intro = false;
@@ -552,7 +587,7 @@ render();*/
 	//****************************************************************************//
 
 	var headTime = 0;
-	var spyderTime = 0;
+	var spiderTime = 0;
 	var velocity=0;
 	var velocityDir=0;
 	var maxvelocity= 6.0;
@@ -666,8 +701,8 @@ render();*/
 	var step1=false;
 	var step2=false;
 	var transitions=0;
-	var spyderMode=false;
-	var robotHeight= robotScale+(0.2*robotScale); //height of the robot during spydermode
+	var spiderMode=false;
+	var robotHeight= robotScale+(0.2*robotScale); //height of the robot during spidermode
 	var spasmCounter;
 	var legId;
 	
@@ -787,15 +822,15 @@ render();*/
 			rotator.rotation.x= dampingX = sign2*0.5*Math.sin(3*headTime);
 		}
 		
-		if(spyderMode & !robotIsMoving)
+		if(spiderMode & !robotIsMoving)
 		{
-			robot.translateY(-0.01*(robotScale/3)*(Math.sin(3*spyderTime)));
+			robot.translateY(-0.01*(robotScale/3)*(Math.sin(3*spiderTime)));
 			for(var i=0; i<8; i++)
 			{
-				upLegsObject[i].rotateZ(-0.005*(Math.sin(3*spyderTime)));
-				knees[i].rotateZ(0.005*(Math.sin(3*spyderTime)));
+				upLegsObject[i].rotateZ(-0.005*(Math.sin(3*spiderTime)));
+				knees[i].rotateZ(0.005*(Math.sin(3*spiderTime)));
 			}
-			spyderTime+=0.015
+			spiderTime+=0.015
 			
 			if(!intro2)
 				legSpasm();
@@ -888,7 +923,7 @@ render();*/
 	
 	function ballToLegsTransformation(instantaneous=false)
 	{
-		spyderTime=0;
+		spiderTime=0;
 		scene.add(legs);
 		robot.add(legs);
 		robotSelfAnimation();
@@ -944,7 +979,7 @@ render();*/
 			{
 				step=false;
 				transformation=2;
-				spyderMode=true;
+				spiderMode=true;
 			}
 		}
 		else
@@ -972,7 +1007,7 @@ render();*/
 				knees[i].rotation.z=1.281592653589791 ;
 			
 			transformation=2;
-			spyderMode=true;
+			spiderMode=true;
 		}
 		
 		
@@ -996,6 +1031,11 @@ render();*/
 	}
 	
 	robotIsInteractingWithTablet = false;
+	var tabletDisplayOn = false;
+	var saveRotationsForTabletInteraction = new Array(4);
+	for(i=0; i<saveRotationsForTabletInteraction.length; i++)
+		saveRotationsForTabletInteraction[i] = new THREE.Euler();
+	
 	function legsAnimation()
 	{
 		function legStep(stepsize=0.1*robotScale)
@@ -1203,8 +1243,11 @@ render();*/
 			}
 		}
 		
+		
 		function robotTabletInteracting(saveIndex)
 		{
+			
+			
 			if(counter3<110)
 				headAtPoint(0.1);
 			else
@@ -1233,6 +1276,19 @@ render();*/
 				knees[5].rotateZ(-0.01);
 				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.005);
 				counter3++;
+				
+				if(counter3==29& saveIndex==0)
+				{
+					tabletDisplayOn = true;
+					saveRotationsForTabletInteraction[0].copy(upLegsObject[5].rotation)
+					saveRotationsForTabletInteraction[1].copy(upLegsObject[6].rotation)
+					saveRotationsForTabletInteraction[2].copy(knees[5].rotation)
+					saveRotationsForTabletInteraction[3].copy(knees[6].rotation)
+					scene.add(maze);
+					maze.position.set(tabletPositions[0]+0.2,5,-4.5);
+					maze.rotation.x=-Math.PI/12;
+					animateMaze();
+				}
 			}
 			else if(counter3<40)
 			{
@@ -1313,16 +1369,27 @@ render();*/
 				upLegsObject[5].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.01);
 				upLegsObject[6].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), -0.002);
 				counter3++;
-				
+
 				if(counter3==109)
 			    {
-					if (tabletReuse[saveIndex])
-						tabletActivation[saveIndex]=!tabletActivation[saveIndex];
+					if(saveIndex==0 & !tabletActivation[0])
+					{
+						counter3=30;
+						upLegsObject[5].rotation.copy( saveRotationsForTabletInteraction[0] );
+						upLegsObject[6].rotation.copy( saveRotationsForTabletInteraction[1] );
+						knees[5].rotation.copy( saveRotationsForTabletInteraction[2]);
+						knees[6].rotation.copy( saveRotationsForTabletInteraction[3]);
+					}
 					else
 					{
-						tabletActivation[saveIndex]=true;
-						//console.log(saveIndex);
+						if (tabletReuse[saveIndex])
+							tabletActivation[saveIndex]=!tabletActivation[saveIndex];
+						else
+						{
+							tabletActivation[saveIndex]=true;
+							//console.log(saveIndex);
 
+						}
 					}
 			    }
 			}
@@ -1433,7 +1500,7 @@ render();*/
 	
 	function legsToBallTransformation()
 	{
-		spyderMode=false;
+		spiderMode=false;
 		robotSelfAnimation();
 		if(robot.position.y>robotScale)
 		{
@@ -1529,7 +1596,7 @@ render();*/
 		turnTorchlight();
 		
 		//intro
-		if(intro2 & !spyderMode)
+		if(intro2 & !spiderMode)
 			ballToLegsTransformation(true);
 		else if(intro2 & robot.position.x<0)
 		{
@@ -3077,25 +3144,9 @@ function backgroundMusic(){
 		
 		if(currentRoom==1 & !containerFlag1)
 			{
-				for(var j=2; j<4; j++)
-					for(var i=0; i<50; i++)
-						{
-							var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
-							bodies[bodies.length-1].position.set(containers[j].getWorldPosition(vec3).x,5,-12);
-							bodies[bodies.length-1].velocity.set(5*(Math.random()-0.5),5*(Math.random()-0.5),5*(Math.random()-0.5));
-							bodies[bodies.length-1].linearDamping = 0.0;
-							bodies[bodies.length-1].angularDamping = 0.0;
-							world.addBody(bodies[bodies.length-1]);
-							scene.add(testMesh);
-						}
-					containerFlag1=true;
-			}
-			
-
-		if(currentRoom==4 & !containerFlag2)
-			{	
-				for(var j=0; j<2; j++)
-					for(var i=0; i<50; i++)
+				
+				if(boxesCounter < 50)
+					for(var j=2; j<4; j++)
 					{
 						var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
 						bodies[bodies.length-1].position.set(containers[j].getWorldPosition(vec3).x,5,-12);
@@ -3105,7 +3156,33 @@ function backgroundMusic(){
 						world.addBody(bodies[bodies.length-1]);
 						scene.add(testMesh);
 					}
-				containerFlag2=true;
+				else
+				{
+					containerFlag1=true;
+					boxesCounter=0;
+				}
+				boxesCounter++;
+			}
+			
+
+		if(currentRoom==4 & !containerFlag2)
+			{	
+				if(boxesCounter<50)
+					for(var j=0; j<2; j++)
+					{
+						var testMesh = createObject(new THREE.BoxBufferGeometry( 2, 2, 2 ), new CANNON.Box ( new CANNON.Vec3(1,1,1)), 10 );
+						bodies[bodies.length-1].position.set(containers[j].getWorldPosition(vec3).x,5,-12);
+						bodies[bodies.length-1].velocity.set(5*(Math.random()-0.5),5*(Math.random()-0.5),5*(Math.random()-0.5));
+						bodies[bodies.length-1].linearDamping = 0.0;
+						bodies[bodies.length-1].angularDamping = 0.0;
+						world.addBody(bodies[bodies.length-1]);
+						scene.add(testMesh);
+					}
+				else
+				{
+					containerFlag2=true;
+				}
+				boxesCounter++;
 			}
 
 	}
@@ -3115,7 +3192,7 @@ function backgroundMusic(){
 		if (roomHasBackDoor[currentRoom+1] & tabletActivation[0])
 		{
 			if( !( (currentRoom+1==8) & !tabletActivation[6]) & !( (currentRoom+1==11) & !tabletActivation[7]) )
-				if (robot.position.x>17+(60*currentRoom))
+				if (robot.position.x>19+(60*currentRoom))
 				{
 					if(doorsArray[currentRoom].position.z>-7)
 					{
@@ -3153,7 +3230,7 @@ function backgroundMusic(){
 							containerFlag=true;
 					}
 			}
-			else
+			else if (robot.position.x<17+(60*currentRoom))
 				if(doorsArray[currentRoom].position.z<0)
 				{
 					if (sound.isPlaying == false){AudioDoorPlay(6);
@@ -3162,7 +3239,7 @@ function backgroundMusic(){
 				}
 		}
 		if (roomHasBackDoor[currentRoom])
-			if (robot.position.x<(60*(currentRoom-1))+47)
+			if (robot.position.x<(60*(currentRoom-1))+45)
 			{
 				if(doorsArray[currentRoom-1].position.z>-7)
 				{
@@ -3171,7 +3248,7 @@ function backgroundMusic(){
 					sound.isPlaying = true;}
 				}
 			}
-			else
+			else if(robot.position.x<(60*(currentRoom-1))+47)
 				if(doorsArray[currentRoom-1].position.z<0)
 				{
 					if (sound.isPlaying == false){AudioDoorPlay(6);
@@ -3353,6 +3430,12 @@ function backgroundMusic(){
 				label.material.opacity= labelCounter;
 				labelCounter += 0.03;
 			}
+			
+			if(label.children.length>0)
+				for(i=0; i<label.children.length; i++)
+				{
+					label.children[i].material.opacity= labelCounter;
+				}
 		}
 		else
 		{
@@ -3361,6 +3444,11 @@ function backgroundMusic(){
 				label.material.opacity= labelCounter;
 				labelCounter += -0.03;
 			}
+			if(label.children.length>0)
+				for(i=0; i<label.children.length; i++)
+				{
+					label.children[i].material.opacity= labelCounter;
+				}
 		}
 	}
 	
@@ -3393,6 +3481,13 @@ function backgroundMusic(){
 			labelCounter = 0;
 			labelChange = 3;
 			scene.remove(label4);
+		}
+		else if(gravityFlag & labelChangePrevious==3 & labelChange==-1)
+		{
+			labelOn = true
+			labelCounter = 0;
+			labelChange = 4;
+			scene.remove(label5);
 		}
 		
 		//labels for actions
@@ -3442,6 +3537,11 @@ function backgroundMusic(){
 					 labelOn= false;
 					 labelChangePrevious=3;
 				 }
+				 if(currentRoom==6)
+				 {
+					 labelOn= false;
+					 labelChangePrevious=1;
+				 }
 				 if(labelCounter<0)
 					 labelChange=-1;
 				 break;
@@ -3451,12 +3551,26 @@ function backgroundMusic(){
 				 if((Epressed & Qpressed ) | currentRoom==8 )
 				 {
 					 labelOn= false;
-					 labelChangePrevious=5;
+					 labelChangePrevious=3;
+				 }
+				 if(currentRoom==6)
+				 {
+					 labelOn= false;
+					 labelChangePrevious=1;
 				 }
 				 if(labelCounter<0)
 					 labelChange=-1;
 				 break;
-				 
+			 case 4:
+				 addLabel(label6);
+				 if(keyboard.pressed("1"))
+				 {
+					 labelOn= false;
+					 labelChangePrevious=4;
+				 }
+				 if(labelCounter<0)
+					 labelChange=-1;
+				 break;
 				 
 		 }
 		
@@ -3800,7 +3914,6 @@ function backgroundMusic(){
 				scene.add(roomsObjects[currentRoom+1]);
 			scene.add(rooms[currentRoom+1]);
 		}
-		
 		
 	}
 	//***************************************************************************//
