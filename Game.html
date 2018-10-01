@@ -107,8 +107,8 @@
 	webGLRenderer.domElement.style.width = webGLRenderer.domElement.width * res_scale + 'px';
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
 
-	webGLRenderer.shadowMap.enabled = false;
-	webGLRenderer.shadowMap.type = THREE.BasicShadowMap;
+	webGLRenderer.shadowMap.enabled = true;
+	webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	
 	document.body.appendChild( webGLRenderer.domElement );
 	console.log(webGLRenderer);
@@ -184,7 +184,35 @@ emissive: 0xffffff,
 emissiveIntensity: 0,
 color: 0xffffff
 });	
+	
+//--------------------------------------------
 
+function createMaterial( materialType, color=null, texturePath=null)
+{
+	
+	var newMaterial = new THREE.MeshPhongMaterial();
+	newMaterial.copy(materialType);
+
+	if (texturePath!=null)
+	{
+		var loader = new THREE.TextureLoader();
+		loader.crossOrigin = '';
+		loader.crossOrigin = 'Access-Control-Allow-Origin' ;
+		THREE.ImageUtils.crossOrigin = '';
+
+		var texture = loader.load( texturePath );
+		//var texture = THREE.ImageUtils.loadTexture('http://www.transparentpng.com/download/space/space-planet-png-3.png');
+		texture.wrapS = THREE.RepeatWrapping;
+		texture.wrapT = THREE.RepeatWrapping;
+
+		newMaterial.map= texture;
+	}
+	
+	if (color!=null)
+		newMaterial.color=color;
+
+	return newMaterial;
+}
 	
 //------------------------------------------------------------------------------------------//
 
@@ -310,6 +338,17 @@ label6EXT2.material.transparent = true;
 label6EXT2.material.depthWrite=false;
 label6.add(label6EXT2);
 	
+	
+//AI VOICE LABELS
+	
+var AIVoiceLabels = [];
+	
+labelAI = createLabel("Activation of rAndy in progress.", 0, 1.5, -3.5, 15, "white", 2, 1);
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
 var labelOn = false;
 //-----------------------------INTERSECTIONS-------------------------//
 
@@ -407,8 +446,16 @@ function onDocumentMouseDown( event ) {
 	function createObject(meshgeom,shape,mass=0, material=materialStandard) {
 	
 		var mesh = new THREE.Mesh(meshgeom, material);
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
+		if (material!=materialGlass)
+		{
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+		}
+		else
+		{
+			mesh.castShadow = false;
+			mesh.receiveShadow = false;
+		}
 
 		if(shape!=null)
 		{
@@ -439,8 +486,16 @@ function onDocumentMouseDown( event ) {
 		});
 		
 		var mesh = new THREE.Mesh(newGeometry, material);
-		mesh.castShadow = true;
-		mesh.receiveShadow = true;
+		if (material!=materialGlass)
+		{
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
+		}
+		else
+		{
+			mesh.castShadow = false;
+			mesh.receiveShadow = false;
+		}
 		
 		for(i=number; i>0; i--)
 		{
@@ -929,11 +984,11 @@ render();*/
 		robotSelfAnimation();
 
 		for(var i =0; i<8; i++)
-			{
-				upLegsObject[i].add(knees[i]);
-				knees[i].add(downLegsObject[i]);
-				downLegsObject[i].add(feet[i]);
-			}
+		{
+			upLegsObject[i].add(knees[i]);
+			knees[i].add(downLegsObject[i]);
+			downLegsObject[i].add(feet[i]);
+		}
 		
 		if(!instantaneous)
 		{
@@ -1786,7 +1841,7 @@ Mesh1.position.set(3,3,3);
 	//CREATE A DOOR
 	function createDoor(doorHeight, doorWidth)
 	{
-		var doorObject = createObject(new THREE.BoxBufferGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)) );
+		var doorObject = createObject(new THREE.BoxBufferGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)),0, createMaterial(materialStandard) );
 		return doorObject;
 	}
 	
@@ -2134,51 +2189,47 @@ Mesh1.position.set(3,3,3);
 		var cylinder = createObject(new THREE.CylinderGeometry( width, width, depth, 12 ), new CANNON.Cylinder( width, width, depth, 12));
 		cylinder.rotation.x=Math.PI/2;
 		cylinder.position.y=width;
-		escapePod.add(cylinder);
 
 		var base = createObject(new THREE.BoxGeometry(width*2,width,depth),	new CANNON.Box(new CANNON.Vec3(width,width/2,depth/2)));
 		base.position.y=width/2;
-		escapePod.add(base);
 		
 		var cylinderBack = createObject(new THREE.CylinderGeometry( width*0.5, width, 3, 12 ), new CANNON.Cylinder( width*0.6, width , 3, 12), 0 , propulsorMaterial1);
 		cylinderBack.rotation.x=Math.PI/2;
 		cylinderBack.position.set(0,width+1,depth/2+1.5);
-		escapePod.add(cylinderBack);
+		
+		var body = mergeLastFixedObjects(3);
+		escapePod.add(body);
 		
 		var propulsor = createObject(new THREE.CylinderGeometry( width*0.6, width*0.6, 0.5, 12 ), new CANNON.Cylinder( width*0.6, width*0.6, 0.5, 12), 0, propulsorMaterial1);
 		propulsor.rotation.x=Math.PI/2;
 		propulsor.position.set(0,width+1,depth/2+3);
 		escapePod.add(propulsor);
 		
-		motor1 = new THREE.Group();
+		motor1 = new THREE.Object3D();
 		for(i=0; i<14; i++)
 		{
 			var circle = createObject(new THREE.CylinderGeometry( 1, 1, 0.5, 12 ), new CANNON.Cylinder( 1, 1, 0.5, 12), 0, propulsorMaterial2);
 			circle.rotation.x=Math.PI/2;
-			
 			circle.rotation.y=(Math.PI/7)*i;
 			circle.translateX(4.5);
-
-			motor1.add(circle);
 		}
-			motor1.position.set(0,width+1,depth/2+3.25);
+		motor1= mergeLastFixedObjects(14);
+		motor1.position.set(0,width+1,depth/2+3.25);
 		
-		motor2 = new THREE.Group();
+		motor2 = new THREE.Object3D();
 		for(i=0; i<14; i++)
 		{
 			var circle = createObject(new THREE.CylinderGeometry( 1, 1, 0.5, 12 ), new CANNON.Cylinder( 1, 1, 0.5, 12), 0, propulsorMaterial2);
 			circle.rotation.x=Math.PI/2;
-			
 			circle.rotation.y=(Math.PI/7)*i;
 			circle.translateX(6.5);
-
-			motor2.add(circle);
 		}
+		motor2 = mergeLastFixedObjects(14);
 		motor2.position.set(0,width+1,depth/2+3.25);
 		
 		escapePod.add(motor1,motor2);
 		
-		propulsorLight = new THREE.PointLight( 0xff0000, 0, 500, 0.15 );
+		propulsorLight = new THREE.PointLight( 0xff0000, 0, 100, 0.15 );
 		propulsorLight.position.y=2.5;
 		propulsorLight.position.z=1;
 		propulsor.add(propulsorLight);
@@ -2296,19 +2347,19 @@ Mesh1.position.set(3,3,3);
 		ceilingObject.rotation.set(Math.PI/2,0,0);
 		ceilingObject.position.y=roomHeight;
 
+		var someStructureObjects = mergeLastFixedObjects(count);
+		someStructureObjects.castShadow=false;
+
 		//column
 		if(column)
 		{
 			var columnObject = createObject(new THREE.BoxGeometry(5,roomHeight,4), new CANNON.Box(new CANNON.Vec3(5/2,roomHeight/2,4/2)));
 			columnObject.position.set(roomWidth/2,roomHeight/2,-roomDepth/2+2);
-			
-			count++;
-			var someStructureObjects = mergeLastFixedObjects(count);
+			standardRoom.add(columnObject)
 			}
 		//wall for door
 		else
 		{
-			var someStructureObjects = mergeLastFixedObjects(count);
 
 			var wallForDoorGroup = createWallForDoor(roomDepth,roomHeight);
 			wallForDoorGroup.position.x=roomWidth/2;
@@ -2374,6 +2425,7 @@ Mesh1.position.set(3,3,3);
 		box.position.set(-roomWidth/2+(wallProportionX*roomWidth/2),roomHeight*wallProportionY,-roomDepth/2);
 		
 		var someStructureObjects = mergeLastFixedObjects(6);
+		someStructureObjects.castShadow = false;
 		
 		var door = createObject(new THREE.BoxGeometry(roomWidth*wallProportionX,roomHeight*wallProportionY,1.5),	new CANNON.Box(new CANNON.Vec3(roomWidth*(wallProportionX/2),roomHeight*(wallProportionY/2),0.75)), 0);;
 		door.position.set(-roomWidth/2+(wallProportionX*roomWidth/2),roomHeight*(wallProportionY/2),-roomDepth/2);
@@ -2398,6 +2450,7 @@ Mesh1.position.set(3,3,3);
 		ceilingObjectEXT.position.y=roomHeight;
 		
 		var someStructureObjectsEXT = mergeLastFixedObjects(2);
+		someStructureObjectsEXT.castShadow = false;
 		
 		var wall1EXT = createObject(new THREE.BoxGeometry(2,roomHeight,roomDepth*2),	new CANNON.Box(new CANNON.Vec3(1,roomHeight/2,roomDepth)));;
 		wall1EXT.position.set(roomWidth/2,roomHeight/2,0);
@@ -2417,7 +2470,8 @@ Mesh1.position.set(3,3,3);
 		wallUpEXT.position.set(0,roomHeight*2,0);
 		
 		var wallEXT = mergeLastFixedObjects(6);
-		//wallEXT.position.z=-roomDepth;
+		wallEXT.castShadow = false;
+		
 		extension.add(wallEXT);
 		
 		var lightEXT1 = roomLight();
@@ -2429,10 +2483,12 @@ Mesh1.position.set(3,3,3);
 		
 		gateEscapePod1 = createObject(new THREE.BoxGeometry( roomWidth, roomHeight/2, 2 ), new CANNON.Box ( new CANNON.Vec3(roomWidth, roomHeight/2, 2)) );
 		gateEscapePod1.position.set(0, roomHeight+roomHeight/2, -(roomDepth*2+roomDepth/2+1));
+		gateEscapePod1.castShadow = false;
 		standardRoom.add(gateEscapePod1);
 		
 		gateEscapePod2 = createObject(new THREE.BoxGeometry( roomWidth, roomHeight/2, 2 ), new CANNON.Box ( new CANNON.Vec3(roomWidth, roomHeight/2, 2)) );
 		gateEscapePod2.position.set(0, -(roomHeight/2), -(roomDepth*2+roomDepth/2+1));
+		gateEscapePod2.castShadow = false;
 		standardRoom.add(gateEscapePod2);
 		
 		extension.add(someStructureObjectsEXT, lightEXT1, lightEXT2);
@@ -2465,6 +2521,8 @@ Mesh1.position.set(3,3,3);
 		var floorObject = createObject(new THREE.RingGeometry(radius/4,radius,numOfSegments), new CANNON.Box(new CANNON.Vec3(radius,radius,0.1/2)));
 		floorObject.rotation.set(-Math.PI/2,0,0);
 		floorObject.position.y=0.05;
+		floorObject.castShadow=false;
+		
 		circleRoom.add(floorObject)
 		
 		doorLift1 = createObject(new THREE.BoxGeometry(radius/2+1,1,radius+1),  new CANNON.Box(new CANNON.Vec3(radius/4+0.5,0.5,radius/2+0.5)));
@@ -2478,10 +2536,12 @@ Mesh1.position.set(3,3,3);
 		lift = createObject(new THREE.CircleGeometry(radius/4,numOfSegments), null);
 		lift.rotation.set(-Math.PI/2,0,0);
 		lift.position.y=0.05;
+		lift.castShadow = false;
 		circleRoom.add(lift);
 		
 		var tube = createObject(new THREE.CylinderGeometry(radius/4,radius/4,15,numOfSegments,1,true), null,0, materialStandardBackSide);
 		tube.position.y=-7.45;
+		tube.castShadow = false;
 		//scene.add(tube)
 		circleRoom.add(tube);
 		
@@ -2496,6 +2556,7 @@ Mesh1.position.set(3,3,3);
 		}
 		
 		var someStructureObjects1= mergeLastFixedObjects(26, materialGlass);
+		someStructureObjects1.castShadow = false;
 
 		for(i=3; i<numOfSegments-3; i++)
 		{
@@ -2504,6 +2565,7 @@ Mesh1.position.set(3,3,3);
 			wallPieces2.translateZ(-radius+((roomHeight/3)*0.5));
 			wallPieces2.lookAt(0,roomHeight/1.5,0);
 			wallPieces2.position.y=roomHeight/7;
+			
 			
 			var wallPieces3=createWall((radius*Math.PI)/numOfSegments,roomHeight/3);
 			wallPieces3.rotation.y=Math.PI/2-(i*Math.PI/numOfSegments);
@@ -2532,6 +2594,7 @@ Mesh1.position.set(3,3,3);
 		
 		//wall for door
 		var someStructureObjects2= mergeLastFixedObjects(101);
+		someStructureObjects2.castShadow = false;
 
 		var wallForDoorGroup = createWallForDoor(39,roomHeight);
 		wallForDoorGroup.position.x=radius-2;
@@ -3072,10 +3135,112 @@ function backgroundMusic(){
 	backgroundMusic.play();
 });
 
-
 }
 
+//-----------------------------IA VOICE-------------------------------//
+	
+var AIVoice = new THREE.Audio( listener );
 
+	
+function AIVoice01(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/activation of randy in progress.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice02(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/status of emergency, Randy, go to the cockpit to take the control of the starship.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice03(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/damage report of the starship engine efficency, 40%, left propulsor, inoperative.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+
+function AIVoice04(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/The escape pod, is prepared to be launched.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice05(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/Escape pod launched, the whole crew left the starship.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+
+function AIVoice06(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/we are entering the gravitational field of the earth, go to room B4.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice07(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/Randy, take the elevator.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice08(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/elevator activated.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice09(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/gravity adaptation in progress.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
+	
+function AIVoice10(){
+var audioLoaderIA = new THREE.AudioLoader();
+	if(AIVoice.isPlaying==false){
+		audioLoaderIA.load( 'IA_audio/gravity adaptation performed.wav', function( buffer ) {
+		AIVoice.setBuffer( buffer );
+		AIVoice.setVolume( 1.5 );
+		AIVoice.play();
+		}); }
+}
 	//--------------------------------------------------------------//
 	//-----------------------CREATE-OBJECTS-------------------------//
 	//--------------------------------------------------------------//
@@ -3261,7 +3426,7 @@ function backgroundMusic(){
 		{
 			if(doorCapsule.rotation.y>=0)
 			{
-				doorCapsule.rotateY(1.02);
+				doorCapsule.rotateY(0.02);
 				if (sound.isPlaying == false){ sound.playbackRate= 0.75; AudioDoorPlay(0.75); sound.isPlaying = true;}
 				
 			}
@@ -3355,10 +3520,7 @@ function backgroundMusic(){
 				motor1.rotateZ(deltaRot)
 				motor2.rotateZ(-deltaRot)
 			}
-			else if(counterEscapePod <5000)
-			{
-				escapePod.translateZ(-delta*Math.cos(rotationY) * Math.cos(rotationX) )
-			}
+
 			else
 				scene.remove(escapePod);
 			
@@ -3585,7 +3747,12 @@ function backgroundMusic(){
 				labelChangeForActions=0;
 		}
 		
-		
+		//IA VOICE LABELS
+		/*
+		if(AIVoice.isPlaying==true)
+		{
+			addLabel(AIVoiceLabels[AIVoiceTrigger])
+		}*/
 			
 			
 	}
@@ -3594,6 +3761,10 @@ function backgroundMusic(){
 	var shipGravityRotation = false;
 	function liftAnimation()
 	{
+		
+		if(currentRoom==11 & !liftUsable)
+			liftUsable=true;
+		
 		if(tabletActivation[1])
 			liftIsOn=true;
 		
@@ -3628,7 +3799,7 @@ function backgroundMusic(){
 				shipGravityRotation = true;
 				earthRotator.rotateX(-0.002);
 			}
-			else if( liftCounter<600)
+			else if( liftCounter<500)
 			{
 				liftCounter++
 			}
@@ -3659,6 +3830,72 @@ function backgroundMusic(){
 		}
 	}
 	
+	var AIVoiceTrigger = 0;
+	function AIVoiceFunction()
+	{
+		if(!intro & AIVoiceTrigger==0)
+		{
+			AIVoice01();
+			AIVoiceTrigger=1;
+		}
+		
+		else if(robot.position.x>75 & AIVoiceTrigger==1)
+		{
+			AIVoice02();
+			AIVoiceTrigger=2;
+		}
+		
+		else if(currentRoom==3 & AIVoiceTrigger==2)
+		{
+			AIVoice03();
+			AIVoiceTrigger=3;
+		}
+		
+		else if(robot.position.x>340 & AIVoiceTrigger==3)
+		{
+			AIVoice04();
+			AIVoiceTrigger=4;
+		}
+		
+		else if(escapePod.position.z<-110 & AIVoiceTrigger==4)
+		{
+			AIVoice05();
+			AIVoiceTrigger=5;
+		}
+		
+		else if(currentRoom==11 & AIVoiceTrigger==5)
+		{
+			AIVoice06();
+			AIVoiceTrigger=6;
+		}
+		
+		else if(currentRoom==4 & AIVoiceTrigger==6)
+		{
+			AIVoice07();
+			AIVoiceTrigger=7;
+		}
+		
+		else if(tabletActivation[1] & AIVoiceTrigger==7)
+		{
+			AIVoice08();
+			AIVoiceTrigger=8;
+		}
+		
+		else if(dampGravity<99 & AIVoiceTrigger==8)
+		{
+			AIVoice09();
+			AIVoiceTrigger=9;
+		}
+		
+		else if(dampGravity<0 & AIVoiceTrigger==9)
+		{
+			AIVoice10();
+			AIVoiceTrigger=10;
+		}
+		
+			
+	}
+	
 	var currentRoom;
 	
 	var flagTest = true;
@@ -3676,6 +3913,7 @@ function backgroundMusic(){
 		liftAnimation();
 		escapePodAnimation();
 		labelFunction();
+		AIVoiceFunction();
 		updatePhysics();									//update the physic
 		director();										//a director which manage the camera
 		if(!intro)
@@ -3824,7 +4062,7 @@ function backgroundMusic(){
 				dampLAz=dampLAz/1.033;
 				
 				if(keyboard.pressed("B"))
-				   camera.rotateX(0.5);
+				   camera.position.z = 150;
 				break;
 				
 			// 1 for director at left edge
@@ -3888,32 +4126,46 @@ function backgroundMusic(){
 		}
 	}
 	
+	var previousCurrentRoom = 0;
+	
 	function optimization()
 	{
-		for(i=0; i<rooms.length; i++)	
+		if(intro2)
+			for(i=2; i<rooms.length; i++)	
+			{
+				if (roomsObjects[i] != null)
+					roomsObjects[i].visible=false;
+				rooms[i].visible=false;
+			}
+		
+		if (currentRoom > previousCurrentRoom)
 		{
-			if (roomsObjects[i] != null)
-				scene.remove(roomsObjects[i]);
-			scene.remove(rooms[i]);
+			if(currentRoom<rooms.length-1)
+			{
+				if (roomsObjects[currentRoom+1] != null)
+					roomsObjects[currentRoom+1].visible=true;
+				rooms[currentRoom+1].visible=true;
+			}
+			if (roomsObjects[currentRoom-2] != null)
+				roomsObjects[currentRoom-2].visible=false;
+			if (rooms[currentRoom-2] != null)
+				rooms[currentRoom-2].visible=false;
+		}
+		else if (currentRoom < previousCurrentRoom)
+		{
+			if( currentRoom>0 )
+			{
+				if (roomsObjects[currentRoom-1] != null)
+					roomsObjects[currentRoom-1].visible=true;
+				rooms[currentRoom-1].visible=true;
+			}
+			if (roomsObjects[currentRoom+2] != null)
+				roomsObjects[currentRoom+2].visible=false;
+			if (roomsObjects[currentRoom+2] != null)
+				rooms[currentRoom+2].visible=false;
 		}
 		
-		if(currentRoom>0)
-		{
-			if (roomsObjects[currentRoom-1] != null)
-				scene.add(roomsObjects[currentRoom-1]);
-			scene.add(rooms[currentRoom-1]);
-		}
-		
-		if (roomsObjects[currentRoom] != null)
-			scene.add(roomsObjects[currentRoom]);
-			scene.add(rooms[currentRoom]);
-			
-		if(currentRoom<rooms.length-1)
-		{
-			if (roomsObjects[currentRoom+1] != null)
-				scene.add(roomsObjects[currentRoom+1]);
-			scene.add(rooms[currentRoom+1]);
-		}
+		previousCurrentRoom = currentRoom;
 		
 	}
 	//***************************************************************************//
