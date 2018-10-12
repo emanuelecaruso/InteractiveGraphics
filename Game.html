@@ -108,7 +108,7 @@
 	webGLRenderer.domElement.style.height = webGLRenderer.domElement.height * res_scale + 'px';
 
 	webGLRenderer.shadowMap.enabled = true;
-	webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	//webGLRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 	
 	document.body.appendChild( webGLRenderer.domElement );
 	console.log(webGLRenderer);
@@ -160,6 +160,11 @@ function loop(){
 
 loop();
 
+var loaderTexture = new THREE.TextureLoader();
+loaderTexture.crossOrigin = "anonymous" ;
+THREE.ImageUtils.crossOrigin = "anonymous";
+
+	
 //------------------MATERIALS-------------------------
 
 var materialStandard = new THREE.MeshPhongMaterial();
@@ -187,25 +192,23 @@ color: 0xffffff
 	
 //--------------------------------------------
 
-function createMaterial( materialType, color=null, texturePath=null)
+function createMaterial( color=null, texturePath=null, materialType=materialStandard )
 {
-	
-	var newMaterial = new THREE.MeshPhongMaterial();
-	newMaterial.copy(materialType);
-
 	if (texturePath!=null)
-	{
-		var loader = new THREE.TextureLoader();
-		loader.crossOrigin = '';
-		loader.crossOrigin = 'Access-Control-Allow-Origin' ;
-		THREE.ImageUtils.crossOrigin = '';
-
-		var texture = loader.load( texturePath );
+	{	
+		var texture = loaderTexture.load( texturePath );
 		//var texture = THREE.ImageUtils.loadTexture('http://www.transparentpng.com/download/space/space-planet-png-3.png');
 		texture.wrapS = THREE.RepeatWrapping;
 		texture.wrapT = THREE.RepeatWrapping;
-
-		newMaterial.map= texture;
+		
+		var newMaterial = new THREE.MeshPhongMaterial({
+			map : texture
+		});
+	}
+	else
+	{
+		var newMaterial = new THREE.MeshPhongMaterial();
+		newMaterial.copy(materialType);
 	}
 	
 	if (color!=null)
@@ -238,11 +241,12 @@ console.log(webGLRenderer);
 
 
 // CREATE "PLAY" 2D TEXT
-function createLabel(text, x, y, z, size, color, planeX, planeY) {
+function createLabel(text, x, y, z, size, planeX, planeY, color= new THREE.Color(0xffffff) ) {
 
 	var canvas = document.createElement("canvas");
 	webGLRenderer.canvas = canvas;
-		
+	canvas.width = canvas.width*5;
+	canvas.height = canvas.height*2;
 	var PlaneText = new THREE.PlaneGeometry(planeX, planeY, 10, 10);
 	
 	var context = canvas.getContext("2d");
@@ -267,6 +271,7 @@ function createLabel(text, x, y, z, size, color, planeX, planeY) {
 	material.transparent = true;
 	var mesh = new THREE.Mesh(PlaneText, material);
 	//mesh.overdraw = true;
+	material.color=color;
 	
 	mesh.position.x = x;
 	mesh.position.y = y;
@@ -277,7 +282,7 @@ function createLabel(text, x, y, z, size, color, planeX, planeY) {
 
 		
 //Add Text to the scene
-mesh = createLabel("PLAY", -20, 7, 0, 60, "lightblue", 3, 2);
+mesh = createLabel("PLAY", -20, 7, 0, 120, 7, 2);
 mesh.rotation.y = Math.PI/2;
 scene.add(mesh);
 
@@ -287,69 +292,101 @@ mesh2.rotation.y = 0;
 mesh2.rotation.x = -Math.PI/2 ;
 scene.add(mesh2);*/
 
-label1 = createLabel("Use A and D to move the robot", 0, 1.5, -3.5, 15, "white", 2, 1);
+label1 = createLabel("Use A and D to move Randy", 0, 1.5, -3.5, 30, 5, 1);
 label1.material.opacity = 0;
 label1.material.transparent = true;
 camera.add(label1);
 	
-label2 = createLabel("Press F to interact", 23, 8, -5.5, 15, "white", 15, 7.5);
+label2 = createLabel("Press F to interact", 23, 8, -5.5, 30, 40, 7.5);
 label2.material.opacity = 0;
 label2.material.transparent = true;
 	
-label3 = createLabel("It's not the right moment", 240, 8, -5.5, 15, "white", 15, 7.5);
+label3 = createLabel("It's not the right moment", 240, 8, -5.5, 30, 40, 7.5);
 label3.material.opacity = 0;
 label3.material.transparent = true;
 label3.material.depthWrite=false;
 
-label4 = createLabel("Use T and Y to switch", -0.7, 1.5, -3.5, 15, "white", 2, 1);
+label4 = createLabel("Use T and Y to switch On and Off the torch", 0, 1.5, -3.5, 30, 5, 1);
 label4.material.opacity = 0;
 label4.material.transparent = true;
 label4.material.depthWrite=false;
-label4EXT = createLabel("On and Off the torch", 1.3, 0, 0, 15, "white", 2, 1);
-label4EXT.material.opacity = 0;
-label4EXT.material.transparent = true;
-label4EXT.material.depthWrite=false;
-label4.add(label4EXT);
 	
-label5 = createLabel("Use Q and E to", -0.5, 1.5, -3.5, 15, "white", 2, 1);
+label5 = createLabel("Use Q and E to rotate the torch", 0, 1.5, -3.5, 30, 5, 1);
 label5.material.opacity = 0;
 label5.material.transparent = true;
 label5.material.depthWrite=false;
-label5EXT = createLabel("rotate the torch", 0.933, 0, 0, 15, "white", 2, 1);
-label5EXT.material.opacity = 0;
-label5EXT.material.transparent = true;
-label5EXT.material.depthWrite=false;
-//label5EXT.position.y=0;
-label5.add(label5EXT);
 	
-	
-label6 = createLabel("Now, you can switch between", -0.95, 1.5, -3.5, 15, "white", 2, 1);
+label6 = createLabel("Now, you can switch between spider-mode and rolling-mode, pressing 1", 0, 1.5, -3.5, 30, 5, 1);
 label6.material.opacity = 0;
 label6.material.transparent = true;
 label6.material.depthWrite=false;
-label6EXT1 = createLabel("spider-mode and rolling-mode", 1.785, 0, 0, 15, "white", 2, 1);
-label6EXT1.material.opacity = 0;
-label6EXT1.material.transparent = true;
-label6EXT1.material.depthWrite=false;
-label6.add(label6EXT1);
-label6EXT2 = createLabel("pressing 1", 0.95, -0.15, 0, 15, "white", 2, 1);
-label6EXT2.material.opacity = 0;
-label6EXT2.material.transparent = true;
-label6EXT2.material.depthWrite=false;
-label6.add(label6EXT2);
 	
-	
+var labelOn = false;
 //AI VOICE LABELS
 	
 var AIVoiceLabels = [];
 	
-labelAI = createLabel("Activation of rAndy in progress.", 0, 1.5, -3.5, 15, "white", 2, 1);
+labelAI = createLabel("Activation of rAndy in progress", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+
+labelAI = createLabel("Status of emergency, Randy, go to the cockpit to take the control of the starship", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
 labelAI.material.opacity = 0;
 labelAI.material.transparent = true;
 labelAI.material.depthWrite=false;
 AIVoiceLabels.push(labelAI);
 	
-var labelOn = false;
+labelAI = createLabel("Damage report of the starship engine efficency, 40%, left propulsor, inoperative", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
+labelAI = createLabel("The escape pod, is prepared to be launched", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
+labelAI = createLabel("Escape pod launched, the whole crew left the starship", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+
+labelAI = createLabel("We are entering the gravitational field of the earth, go to room B4", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
+labelAI = createLabel("Randy, take the elevator", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
+labelAI = createLabel("Elevator activated", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+	
+labelAI = createLabel("Gravity adaptation in progress", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+
+labelAI = createLabel("Gravity adaptation performed", 0, -1.5, -3.5, 30, 5, 1, new THREE.Color( 0xFF69B4 ));
+labelAI.material.opacity = 0;
+labelAI.material.transparent = true;
+labelAI.material.depthWrite=false;
+AIVoiceLabels.push(labelAI);
+
+var labelVoiceOn = false;
 //-----------------------------INTERSECTIONS-------------------------//
 
 // when the mouse moves, call the given function
@@ -403,7 +440,7 @@ function onDocumentMouseDown( event ) {
 
 
 	var worldTime  = 0;
-
+	var deltaTime = 0;
 
 	// once everything is loaded, we run our Three.js stuff	
 	//performance monitor
@@ -654,8 +691,8 @@ render();*/
 	robot.position.set(-25,robotScale,0);
 	
 	var rotator = new THREE.Object3D();
-	var sphereObject = createObject(new THREE.SphereBufferGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale));
-	var headObject = createObject(new THREE.BoxBufferGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)));
+	var sphereObject = createObject(new THREE.SphereBufferGeometry(robotScale, 8, 8),  new CANNON.Sphere(robotScale),0, createMaterial( new THREE.Color( 0xff0000 ) ));
+	var headObject = createObject(new THREE.BoxBufferGeometry(0.8*robotScale,0.5*robotScale,0.5*robotScale), new CANNON.Box(new CANNON.Vec3((0.8*robotScale)/2,(0.5*robotScale)/2,(0.5*robotScale)/2)) ,0, createMaterial( new THREE.Color( 0xffff00 ) ) );
 	headObject.position.set(0,1.25*robotScale,0);
 	
 	var upLegsObject = [];
@@ -706,9 +743,9 @@ render();*/
 	
 	for(var i =0; i<8; i++)
 	{
-		upLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3),  new CANNON.Cylinder(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3));
+		upLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3),  new CANNON.Cylinder(0.2*robotScale,0.1*robotScale,upLegsLength*robotScale,3) ,0, createMaterial( new THREE.Color( 0xffff00 ) ));
 		knees[i]= new THREE.Object3D();
-		downLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3),  new CANNON.Cylinder(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3));
+		downLegsObject[i]= createObject(new THREE.CylinderBufferGeometry(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3),  new CANNON.Cylinder(0.07*robotScale,0.2*robotScale,downLegsLength*robotScale,3) ,0, createMaterial( new THREE.Color( 0xff0000 ) ));
 		feet[i]= new THREE.Object3D();
 	}
 		
@@ -822,7 +859,7 @@ render();*/
 			{
 				if (velocity<maxvelocity)
 				{
-					velocity += 0.25;
+					velocity += 0.5;
 					velocityDir =1;
 				}
 			}
@@ -830,7 +867,7 @@ render();*/
 			{
 				if (velocity>-maxvelocity)
 				{
-					velocity -= 0.25;
+					velocity -= 0.5;
 					velocityDir =-1;
 				}
 			}
@@ -996,7 +1033,7 @@ render();*/
 			if (upLegsObject[0].position.y < -0.1*robotScale)
 			{
 				for(var i =0; i<8; i++)
-					upLegsObject[i].translateY(0.1);
+					upLegsObject[i].translateY(0.2);
 			}
 
 			else if(rotationAngles[kneesId] > 0.5*Math.PI)
@@ -1004,14 +1041,14 @@ render();*/
 				for(var i =0; i<8; i++)
 					knees[i].rotation.z = rotationAngles[kneesId];
 
-				rotationAngles[kneesId] -= 0.06;
+				rotationAngles[kneesId] -= 0.12;
 			}
 
 			else if(feet[0].getWorldPosition(vec3).y>(robot.position.y-robotScale) && !step)
 			{
 					for(var i =0; i<8; i++)
 					{
-						upLegsObject[i].rotateZ(0.01);
+						upLegsObject[i].rotateZ(0.02);
 					}
 			}
 
@@ -1024,8 +1061,8 @@ render();*/
 				{
 					for(var i=0; i<8; i++)
 					{
-						upLegsObject[i].rotateZ(0.01);
-						knees[i].rotateZ(-0.01);
+						upLegsObject[i].rotateZ(0.02);
+						knees[i].rotateZ(-0.02);
 					}
 				}
 			}
@@ -1042,7 +1079,7 @@ render();*/
 			while (upLegsObject[0].position.y < -0.1*robotScale)
 			{
 				for(var i =0; i<8; i++)
-					upLegsObject[i].translateY(0.1);
+					upLegsObject[i].translateY(0.2);
 			}
 			
 			robot.position.y=2.0400000000000023;
@@ -1138,7 +1175,7 @@ render();*/
 						robot.translateX(sign3*stepsize);
 					}
 				}
-				else if(counter1<8)
+				else if( counter1<8)
 				{
 					upLegsObject[0+c].rotateZ(0.15);
 					upLegsObject[0+c].rotateOnWorldAxis(new THREE.Vector3(0, 1, 0), sign3*0.58*stepsize);
@@ -1728,12 +1765,8 @@ render();*/
 			liftUsable=true;
 		}
 			
-		// render using requestAnimationFrame
-		requestAnimationFrame(robotAnimation);
-		webGLRenderer.render(scene, camera);
 	}
 	
-	robotAnimation();
 	
 	//****************************************************************************//
 	//*****************************-ROBOT-SCRIPT**********************************//
@@ -1762,13 +1795,7 @@ render();*/
 	var boxDepth = 1.1;
 	
 
-
-var loader = new THREE.TextureLoader();
-loader.crossOrigin = '';
-loader.crossOrigin = 'Access-Control-Allow-Origin' ;
-THREE.ImageUtils.crossOrigin = '';
-
-var texture = loader.load( "textures/Earth.png" );
+var texture = loaderTexture.load( "textures/Earth.png" );
 //var texture = THREE.ImageUtils.loadTexture('http://www.transparentpng.com/download/space/space-planet-png-3.png');
 texture.wrapS = THREE.RepeatWrapping;
 texture.wrapT = THREE.RepeatWrapping;
@@ -1841,7 +1868,7 @@ Mesh1.position.set(3,3,3);
 	//CREATE A DOOR
 	function createDoor(doorHeight, doorWidth)
 	{
-		var doorObject = createObject(new THREE.BoxBufferGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)),0, createMaterial(materialStandard) );
+		var doorObject = createObject(new THREE.BoxBufferGeometry(1.2,doorHeight,doorWidth), new CANNON.Box(new CANNON.Vec3(1.2/2,doorHeight/2,doorWidth/2)),0, createMaterial( null, "textures/cabin cell for robot entrance/door1.jpg") );
 		return doorObject;
 	}
 	
@@ -2162,7 +2189,7 @@ Mesh1.position.set(3,3,3);
 		return table;
 	}
 	
-	var propulsorLight;
+	//var propulsorLight;
 	var triggerEscapePod = false;
 	var counterEscapePod = 0;
 	var propulsorMaterial1  = new THREE.MeshLambertMaterial( {
@@ -2229,10 +2256,13 @@ Mesh1.position.set(3,3,3);
 		
 		escapePod.add(motor1,motor2);
 		
-		propulsorLight = new THREE.PointLight( 0xff0000, 0, 100, 0.15 );
+		/*
+		propulsorLight = new THREE.PointLight( 0xff0000, 0, 100, 0.85 );
 		propulsorLight.position.y=2.5;
 		propulsorLight.position.z=1;
 		propulsor.add(propulsorLight);
+		*/
+		
 		return escapePod;
 	}
 	
@@ -3032,14 +3062,14 @@ Mesh1.position.set(3,3,3);
 	function roomLight(intermittent=false)
 	{
 		var tubeGeometry = new THREE.CylinderBufferGeometry( 0.2, 0.2, 30 );
-		tubeLight = new THREE.PointLight( 0x6699ff, 0.7, 40, 0.85 );
+		tubeLight = new THREE.PointLight( 0xffffff, 0.7, 40, 0.85 );
 		
 		if(intermittent)
 			var lightTube = new THREE.Mesh( tubeGeometry, lightIntermittentMaterial);
 		else
 			var lightTube = new THREE.Mesh( tubeGeometry,
 			new THREE.MeshLambertMaterial( {
-			emissive: 0x6699ff,
+			emissive: 0xffffff,
 			emissiveIntensity: 1,
 			color: 0xffffff
 			}));	
@@ -3351,6 +3381,8 @@ var audioLoaderIA = new THREE.AudioLoader();
 			}
 
 	}
+	
+	
 	function doorsAnimation()
 	{
 		//doors of rooms animation
@@ -3472,7 +3504,7 @@ var audioLoaderIA = new THREE.AudioLoader();
 		{
 			if(counterEscapePod < 200)
 			{
-				propulsorLight.intensity += 0.01;
+				//propulsorLight.intensity += 0.01;
 				propulsorMaterial1.emissiveIntensity += 0.002;
 				propulsorMaterial2.emissiveIntensity += 0.002;
 			}
@@ -3493,9 +3525,8 @@ var audioLoaderIA = new THREE.AudioLoader();
 			}
 			else if(counterEscapePod <1450)
 			{
-				if(propulsorLight.intensity>0.6)
+				if(propulsorMaterial1.emissiveIntensity>0.1)
 				{
-					propulsorLight.intensity = propulsorLight.intensity/1.01 ;
 					propulsorMaterial1.emissiveIntensity = propulsorMaterial1.emissiveIntensity/1.005 ;
 					propulsorMaterial2.emissiveIntensity = propulsorMaterial2.emissiveIntensity/1.005 ;
 				}
@@ -3571,6 +3602,7 @@ var audioLoaderIA = new THREE.AudioLoader();
 	}
 	
 	var labelCounter =0;
+	var labelVoiceCounter =0;
 	var labelChange = -1;
 	var labelChangePrevious = -1;
 	var labelChangeForActions = 0;
@@ -3614,6 +3646,49 @@ var audioLoaderIA = new THREE.AudioLoader();
 		}
 	}
 	
+	function addVoiceLabel(label, onCamera=true)
+	{
+		if(onCamera)
+		{
+			camera.add(label);
+			scene.add(camera);
+		}
+		else
+			scene.add(label);
+
+		if (labelVoiceOn)
+		{
+			if(label.material.opacity<1)
+			{
+				label.material.opacity= labelVoiceCounter;
+			}
+			
+			labelVoiceCounter += 0.03;
+
+			if(label.children.length>0)
+				for(i=0; i<label.children.length; i++)
+				{
+					label.children[i].material.opacity= labelVoiceCounter;
+				}
+		}
+		else
+		{
+			if(labelVoiceCounter>1)
+			   labelVoiceCounter=1;
+			
+			if(label.material.opacity>0)
+			{
+				label.material.opacity= labelVoiceCounter;
+				labelVoiceCounter += -0.03;
+			}
+			if(label.children.opacity>0)
+				for(i=0; i<label.children.length; i++)
+				{
+					label.children[i].material.opacity= labelVoiceCounter;
+				}
+		}
+	}
+	var flagVoiceLabel= false;
 	function labelFunction()
 	{
 		//sequence of labels
@@ -3748,11 +3823,27 @@ var audioLoaderIA = new THREE.AudioLoader();
 		}
 		
 		//IA VOICE LABELS
-		/*
+		
 		if(AIVoice.isPlaying==true)
 		{
-			addLabel(AIVoiceLabels[AIVoiceTrigger])
-		}*/
+			labelVoiceOn = true
+			addVoiceLabel(AIVoiceLabels[AIVoiceTrigger-1])
+		}
+		else if(!intro)
+		{
+			if(labelVoiceCounter<1500 & !flagVoiceLabel)
+			{
+				labelVoiceCounter++;
+				flagVoiceLabel=true;
+			}
+			else
+			{
+				addVoiceLabel(AIVoiceLabels[AIVoiceTrigger-1])
+				labelVoiceOn=false;
+			}
+			
+			
+		}
 			
 			
 	}
@@ -3902,8 +3993,10 @@ var audioLoaderIA = new THREE.AudioLoader();
 	//function which animate the map
 	function mapAnimation()
 	{
-		worldTime += clock.getDelta();						//update the world time
+		deltaTime = clock.getDelta();	
+		worldTime += deltaTime;						//update the world time
 		currentRoom = Math.floor((robot.position.x+30)/60);
+		robotAnimation();
 		doorsAnimation();									//animation of doors (including the CAPSULE DOOR)
 		boxesOfContainer();									//boxes of container
 		securityCameraAnimation();							//animate the security camera
@@ -3950,8 +4043,10 @@ var audioLoaderIA = new THREE.AudioLoader();
 			world.addBody(bodies[bodies.length-1]);
 			scene.add(testMesh);
 		}
-		
+
 		requestAnimationFrame(mapAnimation);
+		webGLRenderer.render(scene, camera);
+		
 	}
 	
 	mapAnimation();
@@ -4166,7 +4261,6 @@ var audioLoaderIA = new THREE.AudioLoader();
 		}
 		
 		previousCurrentRoom = currentRoom;
-		
 	}
 	//***************************************************************************//
 	//*****************************-MAP SCRIPT-**********************************//
@@ -4177,7 +4271,6 @@ var audioLoaderIA = new THREE.AudioLoader();
 	
 <script type="text/javascript">
 //SCRIPT PER IL RENDERING
-	webGLRenderer.render(scene, camera);
 </script>
 
 	
